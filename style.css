@@ -83,3 +83,8 @@ body {
     opacity: 1;
   }
   
+  #buyMeACoffee {
+    margin-top: 20px; /* 上に余白を追加 */
+    text-align: center; /* ボタンを中央揃え */
+  }
+  

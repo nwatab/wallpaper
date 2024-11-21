@@ -14,13 +14,19 @@
   <!-- End Google Tag Manager -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="./static/css/style.css">
 
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
-
-  <title>Wallpaper Pattern Tool</title>
+ 
+  <!-- favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="./static/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./static/favicon//favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./static/favicon//favicon-16x16.png">
+  <link rel="manifest" href="./static/favicon/site.webmanifest">
+  <title>Wallpaper Group Visualizer</title>
 </head>
 
 <body>
@@ -31,7 +37,7 @@
   <div id="container">
     <div id="sidebar">
       <h2>Unit</h2>
-      <div id="motifSelection">
+      <div id="motifSelection" class="previewGrid">
         <!-- Motif previews -->
         <div class="motifPreview" data-motif="circle">
           <canvas width="50" height="50"></canvas>
@@ -135,7 +141,7 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="./static/js/script.js"></script>
 </body>
 
 </html>

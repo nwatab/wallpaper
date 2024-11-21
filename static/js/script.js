@@ -79,7 +79,7 @@ motifPreviews.forEach(preview => {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.save();
     ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
-    ctx.fillStyle = 'blue';
+    ctx.fillStyle = 'purple';
 
     switch (motif) {
       case 'circle':
@@ -180,7 +180,7 @@ motifPreviews.forEach(preview => {
   function drawMotif(x, y, ctx) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.fillStyle = 'blue';
+    ctx.fillStyle = 'purple';
 
     switch (selectedMotif) {
       case 'circle':
@@ -217,7 +217,7 @@ motifPreviews.forEach(preview => {
 
   // 青海波のプレビューを描画
   function drawSeigaihaPreview(ctx) {
-    ctx.strokeStyle = 'blue';
+    ctx.strokeStyle = 'purple';
     ctx.lineWidth = 2;
     for (let i = 0; i < 3; i++) {
       ctx.beginPath();
@@ -228,7 +228,7 @@ motifPreviews.forEach(preview => {
 
   // 青海波のモチーフを描画
   function drawSeigaihaMotif(ctx) {
-    ctx.strokeStyle = 'blue';
+    ctx.strokeStyle = 'purple';
     ctx.lineWidth = 2;
     for (let i = 0; i < 5; i++) {
       ctx.beginPath();
@@ -239,7 +239,7 @@ motifPreviews.forEach(preview => {
 
   // ストライプのプレビューを描画
   function drawStripesPreview(ctx) {
-    ctx.fillStyle = 'blue';
+    ctx.fillStyle = 'purple';
     for (let i = -25; i <= 25; i += 10) {
       ctx.fillRect(i, -25, 5, 50);
     }
@@ -247,7 +247,7 @@ motifPreviews.forEach(preview => {
 
   // ストライプのモチーフを描画
   function drawStripesMotif(ctx) {
-    ctx.fillStyle = 'blue';
+    ctx.fillStyle = 'purple';
     for (let i = -25; i <= 25; i += 10) {
       ctx.fillRect(i, -25, 5, 50);
     }
@@ -256,12 +256,12 @@ motifPreviews.forEach(preview => {
   // タータンチェックのプレビューを描画
   function drawTartanPreview(ctx) {
     // 縦線
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = 'green';
     for (let i = -25; i <= 25; i += 10) {
       ctx.fillRect(i - 2, -25, 4, 50);
     }
     // 横線
-    ctx.fillStyle = 'green';
+    ctx.fillStyle = 'purple';
     for (let i = -25; i <= 25; i += 10) {
       ctx.fillRect(-25, i - 2, 50, 4);
     }
@@ -270,12 +270,12 @@ motifPreviews.forEach(preview => {
   // タータンチェックのモチーフを描画
   function drawTartanMotif(ctx) {
     // 縦線
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = 'green';
     for (let i = -25; i <= 25; i += 10) {
       ctx.fillRect(i - 2, -25, 4, 50);
     }
     // 横線
-    ctx.fillStyle = 'green';
+    ctx.fillStyle = 'purple';
     for (let i = -25; i <= 25; i += 10) {
       ctx.fillRect(-25, i - 2, 50, 4);
     }

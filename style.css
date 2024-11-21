@@ -1,0 +1,85 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  #container {
+    display: flex;
+    height: 100vh;
+  }
+
+  #sidebar {
+    width: 300px;
+    background-color: #f0f0f0;
+    padding: 10px;
+    overflow-y: auto;
+  }
+
+  #mainContent {
+    flex-grow: 1;
+    position: relative;
+  }
+
+  canvas {
+    display: block;
+  }
+
+  .motifPreview,
+  .groupPreview {
+    display: inline-block;
+    margin: 5px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+  }
+
+  .motifPreview.selected,
+  .groupPreview.selected {
+    border: 2px solid blue;
+  }
+
+  .previewGrid {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .groupPreview {
+    width: 20%;
+    box-sizing: border-box;
+  }
+
+  .groupPreview canvas {
+    width: 100%;
+    height: auto;
+  }
+
+  h2 {
+    margin-top: 20px;
+  }
+
+  .groupPreview {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .groupPreview::after {
+    content: attr(data-description);
+    position: absolute;
+    bottom: 100%; /* 要素の上に表示 */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 100;
+  }
+  
+  .groupPreview:hover::after {
+    opacity: 1;
+  }
+  

@@ -18,28 +18,28 @@ window.onload = function () {
 
   // モチーフのプレビューを初期化
   const motifPreviews = document.querySelectorAll('.motifPreview');
-motifPreviews.forEach(preview => {
-  const motif = preview.getAttribute('data-motif');
-  const previewCanvas = preview.querySelector('canvas');
-  const previewCtx = previewCanvas.getContext('2d');
+  motifPreviews.forEach(preview => {
+    const motif = preview.getAttribute('data-motif');
+    const previewCanvas = preview.querySelector('canvas');
+    const previewCtx = previewCanvas.getContext('2d');
 
-  // プレビュー用のモチーフを描画
-  drawMotifPreview(previewCtx, motif);
+    // プレビュー用のモチーフを描画
+    drawMotifPreview(previewCtx, motif);
 
-  // クリックイベントを追加
-  preview.addEventListener('click', function () {
-    selectedMotif = motif;
-    motifPreviews.forEach(p => p.classList.remove('selected'));
-    preview.classList.add('selected');
-    drawPattern();
-    updateGroupPreviews(); // Add this line to update group previews
+    // クリックイベントを追加
+    preview.addEventListener('click', function () {
+      selectedMotif = motif;
+      motifPreviews.forEach(p => p.classList.remove('selected'));
+      preview.classList.add('selected');
+      drawPattern();
+      updateGroupPreviews(); // Add this line to update group previews
+    });
+
+    // デフォルトの選択
+    if (motif === selectedMotif) {
+      preview.classList.add('selected');
+    }
   });
-
-  // デフォルトの選択
-  if (motif === selectedMotif) {
-    preview.classList.add('selected');
-  }
-});
 
   // 壁紙群のプレビューを初期化
   const groupPreviews = document.querySelectorAll('.groupPreview');
@@ -47,10 +47,10 @@ motifPreviews.forEach(preview => {
     const group = preview.getAttribute('data-group');
     const previewCanvas = preview.querySelector('canvas');
     const previewCtx = previewCanvas.getContext('2d');
-  
+
     // プレビュー用の壁紙群を描画
     drawGroupPreview(previewCtx, group);
-  
+
     // クリックイベントを追加
     preview.addEventListener('click', function () {
       selectedGroup = group;
@@ -58,7 +58,7 @@ motifPreviews.forEach(preview => {
       preview.classList.add('selected');
       drawPattern();
     });
-  
+
     // デフォルトの選択
     if (group === selectedGroup) {
       preview.classList.add('selected');
@@ -88,9 +88,11 @@ motifPreviews.forEach(preview => {
         ctx.fill();
         break;
       case 'square':
+        ctx.fillStyle = 'navy';
         ctx.fillRect(-10, -10, 20, 20);
         break;
       case 'triangle':
+        ctx.fillStyle = 'blue';
         ctx.beginPath();
         ctx.moveTo(0, -10);
         ctx.lineTo(10, 10);
@@ -106,6 +108,9 @@ motifPreviews.forEach(preview => {
         break;
       case 'tartan':
         drawTartanPreview(ctx);
+        break;
+      case 'houndstooth':
+        drawHoundstoothPreview(ctx);
         break;
       // 他のモチーフを追加
     }
@@ -174,7 +179,7 @@ motifPreviews.forEach(preview => {
     }
     ctx.restore();
   }
-  
+
 
   // モチーフの描画関数
   function drawMotif(x, y, ctx) {
@@ -184,14 +189,17 @@ motifPreviews.forEach(preview => {
 
     switch (selectedMotif) {
       case 'circle':
+        ctx.fillStyle = 'purple';
         ctx.beginPath();
         ctx.arc(0, 0, 10, 0, 2 * Math.PI);
         ctx.fill();
         break;
       case 'square':
+        ctx.fillStyle = 'navy';
         ctx.fillRect(-10, -10, 20, 20);
         break;
       case 'triangle':
+        ctx.fillStyle = 'blue';
         ctx.beginPath();
         ctx.moveTo(0, -10);
         ctx.lineTo(10, 10);
@@ -208,6 +216,9 @@ motifPreviews.forEach(preview => {
       case 'tartan':
         drawTartanMotif(ctx);
         break;
+      case 'houndstooth':
+        drawHoundstoothMotif(ctx);
+        break;
       // 他のモチーフを追加
     }
 
@@ -215,9 +226,8 @@ motifPreviews.forEach(preview => {
   }
 
 
-  // 青海波のプレビューを描画
   function drawSeigaihaPreview(ctx) {
-    ctx.strokeStyle = 'purple';
+    ctx.strokeStyle = 'rgb(52, 62, 140)';
     ctx.lineWidth = 2;
     for (let i = 0; i < 3; i++) {
       ctx.beginPath();
@@ -228,7 +238,7 @@ motifPreviews.forEach(preview => {
 
   // 青海波のモチーフを描画
   function drawSeigaihaMotif(ctx) {
-    ctx.strokeStyle = 'purple';
+    ctx.strokeStyle = 'rgb(52, 62, 140)';
     ctx.lineWidth = 2;
     for (let i = 0; i < 5; i++) {
       ctx.beginPath();
@@ -239,7 +249,7 @@ motifPreviews.forEach(preview => {
 
   // ストライプのプレビューを描画
   function drawStripesPreview(ctx) {
-    ctx.fillStyle = 'purple';
+    ctx.fillStyle = 'rgb(38, 41, 100)';
     for (let i = -25; i <= 25; i += 10) {
       ctx.fillRect(i, -25, 5, 50);
     }
@@ -247,7 +257,7 @@ motifPreviews.forEach(preview => {
 
   // ストライプのモチーフを描画
   function drawStripesMotif(ctx) {
-    ctx.fillStyle = 'purple';
+    ctx.fillStyle = 'rgb(38, 41, 100)';
     for (let i = -25; i <= 25; i += 10) {
       ctx.fillRect(i, -25, 5, 50);
     }
@@ -280,6 +290,77 @@ motifPreviews.forEach(preview => {
       ctx.fillRect(-25, i - 2, 50, 4);
     }
   }
+
+
+
+  // 千鳥格子のプレビューを描画（上下反転）
+  function drawHoundstoothPreview(ctx) {
+    // モチーフを複数描画してプレビューを作成
+    const motifSize = 50;
+    for (let x = -50; x <= 50; x += motifSize) {
+      for (let y = -50; y <= 50; y += motifSize) {
+        ctx.save();
+        ctx.translate(x, y);
+        drawHoundstoothMotif(ctx);
+        ctx.restore();
+      }
+    }
+  }
+
+  // 千鳥格子のモチーフを描画（上下反転）
+  function drawHoundstoothMotif(ctx) {
+    const size = 50; // モチーフのサイズ
+    const offsetX = -25;
+    const offsetY = -25;
+
+    ctx.fillStyle = 'black';
+
+    // 上下反転のためにY座標を調整
+
+    // 三角形1（上下反転）
+    ctx.beginPath();
+    ctx.moveTo(offsetX, offsetY + size); // 下左
+    ctx.lineTo(offsetX, offsetY + size * 0.75); // 下中央
+    ctx.lineTo(offsetX + size * 0.25, offsetY + size); // 下右
+    ctx.closePath();
+    ctx.fill();
+
+    // 四角形1（上下反転）
+    ctx.beginPath();
+    ctx.moveTo(offsetX, offsetY + size * 0.5); // 中央左
+    ctx.lineTo(offsetX, offsetY + size * 0.25); // 上中央
+    ctx.lineTo(offsetX + size * 0.5, offsetY + size * 0.75); // 下中央右
+    ctx.lineTo(offsetX + size * 0.5, offsetY + size); // 下右
+    ctx.closePath();
+    ctx.fill();
+
+    // 四角形2（上下反転）
+    ctx.beginPath();
+    ctx.moveTo(offsetX, offsetY + size * 0.5); // 中央左
+    ctx.lineTo(offsetX, offsetY); // 上左
+    ctx.lineTo(offsetX + size * 0.5, offsetY); // 上右
+    ctx.lineTo(offsetX + size * 0.5, offsetY + size * 0.5); // 中央右
+    ctx.closePath();
+    ctx.fill();
+
+    // 四角形3（上下反転）
+    ctx.beginPath();
+    ctx.moveTo(offsetX + size * 0.5, offsetY); // 上左
+    ctx.lineTo(offsetX + size, offsetY + size * 0.5); // 中央右
+    ctx.lineTo(offsetX + size * 0.75, offsetY + size * 0.5); // 中央左
+    ctx.lineTo(offsetX + size * 0.5, offsetY + size * 0.25); // 上中央
+    ctx.closePath();
+    ctx.fill();
+
+    // 三角形2（上下反転）
+    ctx.beginPath();
+    ctx.moveTo(offsetX + size * 0.75, offsetY); // 上左
+    ctx.lineTo(offsetX + size, offsetY); // 上右
+    ctx.lineTo(offsetX + size, offsetY + size * 0.25); // 中央右
+    ctx.closePath();
+    ctx.fill();
+  }
+
 
   // パターンを描画
   function drawPattern() {
@@ -349,8 +430,8 @@ motifPreviews.forEach(preview => {
     const dx = 50;
     const dy = 50;
 
-    for (let x = 0; x < drawCtx.canvas.width; x += dx) {
-      for (let y = 0; y < drawCtx.canvas.height; y += dy) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         drawMotif(x, y, drawCtx);
       }
     }
@@ -361,8 +442,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 100;
 
-    for (let x = 0; x < drawCtx.canvas.width; x += dx) {
-      for (let y = 0; y < drawCtx.canvas.height; y += dy) {
+    for (let x = 0; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = 0; y < drawCtx.canvas.height + dy; y += dy) {
         drawCtx.save();
         drawCtx.translate(x + dx / 2, y + dy / 2);
         for (let i = 0; i < 2; i++) {
@@ -379,8 +460,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 50;
 
-    for (let x = 0; x < drawCtx.canvas.width; x += dx) {
-      for (let y = 0; y < drawCtx.canvas.height; y += dy) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         // 元のモチーフ
         drawCtx.save();
         drawCtx.translate(x, y);
@@ -402,7 +483,7 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 50;
 
-    for (let x = 0; x < drawCtx.canvas.width + dx; x += dx / 2) {
+    for (let x = 0; x < drawCtx.canvas.width + dx; x += dx) {
       for (let y = 0; y < drawCtx.canvas.height + dy; y += dy) {
         drawCtx.save();
         drawCtx.translate(x, y);
@@ -423,8 +504,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 50;
 
-    for (let x = 0; x < drawCtx.canvas.width + dx; x += dx / 2) {
-      for (let y = 0; y < drawCtx.canvas.height + dy; y += dy) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         drawCtx.save();
         drawCtx.translate(x, y);
         drawMotif(0, 0, drawCtx);
@@ -444,8 +525,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 100;
 
-    for (let x = 0; x <= drawCtx.canvas.width; x += dx) {
-      for (let y = 0; y <= drawCtx.canvas.height; y += dy) {
+    for (let x = 0; x < drawCtx.canvas.width; x += dx) {
+      for (let y = 0; y < drawCtx.canvas.height; y += dy) {
         const positions = [
           { sx: 1, sy: 1 },
           { sx: -1, sy: 1 },
@@ -469,8 +550,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 100;
 
-    for (let x = 0; x <= drawCtx.canvas.width + dx; x += dx) {
-      for (let y = 0; y <= drawCtx.canvas.height + dy; y += dy) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         // 垂直鏡映
         drawCtx.save();
         drawCtx.translate(x, y);
@@ -494,8 +575,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 100;
 
-    for (let x = 0; x <= drawCtx.canvas.width + dx; x += dx) {
-      for (let y = 0; y <= drawCtx.canvas.height + dy; y += dy) {
+    for (let x = 0; x < drawCtx.canvas.width; x += dx) {
+      for (let y = 0; y < drawCtx.canvas.height; y += dy) {
         // 180度回転
         drawCtx.save();
         drawCtx.translate(x + dx / 2, y + dy / 2);
@@ -520,8 +601,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 100;
 
-    for (let x = 0; x <= drawCtx.canvas.width; x += dx) {
-      for (let y = 0; y <= drawCtx.canvas.height; y += dy) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         const positions = [
           { sx: 1, sy: 1 },
           { sx: -1, sy: 1 },
@@ -552,8 +633,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 100;
 
-    for (let x = 0; x <= drawCtx.canvas.width; x += dx) {
-      for (let y = 0; y <= drawCtx.canvas.height; y += dy) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         drawCtx.save();
         drawCtx.translate(x + dx / 2, y + dy / 2);
         for (let i = 0; i < 4; i++) {
@@ -570,8 +651,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 100;
 
-    for (let x = 0; x <= drawCtx.canvas.width; x += dx) {
-      for (let y = 0; y <= drawCtx.canvas.height; y += dy) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         drawCtx.save();
         drawCtx.translate(x + dx / 2, y + dy / 2);
         // 90度回転と鏡映
@@ -592,8 +673,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = 100;
 
-    for (let x = 0; x <= drawCtx.canvas.width; x += dx) {
-      for (let y = 0; y <= drawCtx.canvas.height; y += dy) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         drawCtx.save();
         drawCtx.translate(x + dx / 2, y + dy / 2);
         // 90度回転
@@ -617,8 +698,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = Math.sqrt(3) / 2 * dx;
 
-    for (let y = 0; y <= drawCtx.canvas.height + dy; y += dy) {
-      for (let x = 0; x <= drawCtx.canvas.width + dx; x += dx) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         const xOffset = (Math.floor(y / dy) % 2 === 0) ? 0 : dx / 2;
         drawCtx.save();
         drawCtx.translate(x + xOffset, y);
@@ -636,8 +717,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = Math.sqrt(3) / 2 * dx;
 
-    for (let y = 0; y <= drawCtx.canvas.height + dy; y += dy) {
-      for (let x = 0; x <= drawCtx.canvas.width + dx; x += dx) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         const xOffset = (Math.floor(y / dy) % 2 === 0) ? 0 : dx / 2;
         drawCtx.save();
         drawCtx.translate(x + xOffset, y);
@@ -658,8 +739,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = Math.sqrt(3) / 2 * dx;
 
-    for (let y = 0; y <= drawCtx.canvas.height + dy; y += dy) {
-      for (let x = 0; x <= drawCtx.canvas.width + dx; x += dx) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         const xOffset = (Math.floor(y / dy) % 2 === 0) ? 0 : dx / 2;
         drawCtx.save();
         drawCtx.translate(x + xOffset, y);
@@ -683,8 +764,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = Math.sqrt(3) / 2 * dx;
 
-    for (let y = 0; y <= drawCtx.canvas.height + dy; y += dy) {
-      for (let x = 0; x <= drawCtx.canvas.width + dx; x += dx) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         const xOffset = (Math.floor(y / dy) % 2 === 0) ? 0 : dx / 2;
         drawCtx.save();
         drawCtx.translate(x + xOffset, y);
@@ -702,8 +783,8 @@ motifPreviews.forEach(preview => {
     const dx = 100;
     const dy = Math.sqrt(3) / 2 * dx;
 
-    for (let y = 0; y <= drawCtx.canvas.height + dy; y += dy) {
-      for (let x = 0; x <= drawCtx.canvas.width + dx; x += dx) {
+    for (let x = -dx / 2; x < drawCtx.canvas.width + dx; x += dx) {
+      for (let y = -dy / 2; y < drawCtx.canvas.height + dy; y += dy) {
         const xOffset = (Math.floor(y / dy) % 2 === 0) ? 0 : dx / 2;
         drawCtx.save();
         drawCtx.translate(x + xOffset, y);

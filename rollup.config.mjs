@@ -4,9 +4,10 @@ import { promises as fs } from 'fs';
 import typescript from '@rollup/plugin-typescript';
 import postcss from 'rollup-plugin-postcss';
 import autoprefixer from 'autoprefixer';
-import terser from '@rollup/plugin-terser';
 
 const DIST_DIR = 'dist';
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 export default {
   input: 'src/index.ts',
@@ -21,7 +22,8 @@ export default {
       plugins: [autoprefixer()],
       extract: true, // CSS を別ファイルに出力
     }),
-    terser({
+    isProduction &&
+    (await import('@rollup/plugin-terser')).default({
       compress: {
         drop_console: true,
       },

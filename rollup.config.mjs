@@ -1,5 +1,5 @@
 import path from 'path';
-import { promises as fs } from 'fs';
+import fs from 'fs/promises';
 
 import typescript from '@rollup/plugin-typescript';
 import postcss from 'rollup-plugin-postcss';
@@ -29,6 +29,7 @@ export default {
       },
     }),
     copyHtmlPlugin(),
+    copyDirectoryPlugin('public', DIST_DIR),
   ],
 };
 
@@ -47,4 +48,32 @@ function copyHtmlPlugin() {
       }
     },
   };
+}
+
+async function copyDirectoryPlugin(src, dest) {
+  return {
+    name: `copy-${src}`,
+    writeBundle: async () => {
+      try {
+        await fs.mkdir(dest, { recursive: true });
+
+        // コピー元ディレクトリの内容を取得
+        const entries = await fs.readdir(src, { withFileTypes: true });
+
+        // 各エントリをコピー
+        for (const entry of entries) {
+          const srcPath = path.join(src, entry.name);
+          const destPath = path.join(dest, entry.name);
+
+          if (entry.isDirectory()) {
+            await copyDirectoryContents(srcPath, destPath);
+          } else {
+            await fs.copyFile(srcPath, destPath);
+          }
+        }
+      } catch (err) {
+        console.error('ディレクトリのコピー中にエラーが発生しました:', err);
+      }
+    }
+  }
 }

@@ -8,16 +8,18 @@ import autoprefixer from 'autoprefixer';
 const DIST_DIR = 'dist';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const sourcemap = true;
 
 export default {
   input: 'src/index.ts',
   output: {
     dir: DIST_DIR,
+    sourcemap: sourcemap,
     format: 'iife',
     name: 'WallpaperApp',
   },
   plugins: [
-    typescript({ sourceMap: true }),
+    typescript({ sourceMap: sourcemap, inlineSources: true, }),
     postcss({
       plugins: [autoprefixer()],
       extract: true, // CSS を別ファイルに出力

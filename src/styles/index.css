@@ -1,98 +1,100 @@
 body {
-    font-family: "EB Garamond", serif;
-    font-optical-sizing: auto;
-    font-weight: 400;
-    font-style: normal;
-    margin: 0;
-    padding: 0;
-  }
+  font-family: 'EB Garamond', serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  margin: 0;
+  padding: 0;
+}
 
-  #container {
-    display: flex;
-    height: 100vh;
-  }
+#container {
+  display: flex;
+  height: 100vh;
+}
 
-  #sidebar {
-    max-width: 256px;
-    min-width: 64px;
-    background-color: #f0f0f0;
-    padding: 10px;
-    padding-bottom: 90px;
-    overflow-y: auto;
-  }
+#sidebar {
+  max-width: 256px;
+  min-width: 64px;
+  background-color: #f0f0f0;
+  padding: 10px;
+  padding-bottom: 90px;
+  overflow-y: auto;
+}
 
-  #mainContent {
-    flex-grow: 1;
-    position: relative;
-  }
+#mainContent {
+  flex-grow: 1;
+  position: relative;
+}
 
-  canvas {
-    display: block;
-  }
+canvas {
+  display: block;
+}
 
-  .motifPreview,
-  .groupPreview {
-    display: inline-block;
-    margin: 5px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-  }
+.motif-preview,
+.group-preview {
+  display: inline-block;
+  margin: 5px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+}
 
-  .motifPreview.selected,
-  .groupPreview.selected {
-    border: 2px solid purple;
-  }
+.motif-preview.selected,
+.group-preview.selected {
+  border: 2px solid purple;
+}
 
-  .previewGrid {
-    display: flex;
-    flex-wrap: wrap;
-  }
+.previewGrid {
+  display: flex;
+  flex-wrap: wrap;
+}
 
-  .groupPreview {
-    box-sizing: border-box;
-  }
+.group-preview {
+  box-sizing: border-box;
+}
 
-  .groupPreview canvas {
-    width: 100%;
-    height: auto;
-  }
+.group-preview canvas {
+  width: 100%;
+  height: auto;
+}
 
-  h2 {
-    margin-top: 40px;
-  }
+h2 {
+  margin-top: 40px;
+}
 
-  .groupPreview {
-    margin: 5px;
-    position: relative;
-    display: inline-block;
-  }
-  
-  .groupPreview::after {
-    content: attr(data-description);
-    position: absolute;
-    bottom: 105%; /* 要素の上に表示 */
-    left: -20%;
-    transform: translateX(0%);
-    background-color: rgba(0, 0, 0, 0.75);
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 4px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.1s;
-    z-index: 100;
-  }
-  
-  .groupPreview:hover::after {
-    opacity: 1;
-  }
-  
-  #buyMeACoffee {
-    position: fixed;
-    text-align: left;
-    bottom: 10px;
-    left: 10px;
-    z-index: 1000; /* ボタンが他の要素の下に隠れないようにする */
-  }
-  
+.group-preview {
+  margin: 5px;
+  position: relative;
+  display: inline-block;
+}
+
+.group-preview::after {
+  content: attr(data-description);
+  position: absolute;
+  bottom: 105%; /* 要素の上に表示 */
+  left: -20%;
+  transform: translateX(0%);
+  background-color: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s;
+  z-index: 100;
+}
+
+.group-preview:hover::after {
+  opacity: 1;
+}
+
+#buyMeACoffee {
+  position: fixed;
+  text-align: left;
+  bottom: 10px;
+  left: 10px;
+  z-index: 1000; /* ボタンが他の要素の下に隠れないようにする */
+}

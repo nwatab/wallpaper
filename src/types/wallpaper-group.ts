@@ -1,0 +1,18 @@
+export type WallpaperGroupType =
+  | 'p1'
+  | 'p2'
+  | 'pm'
+  | 'pg'
+  | 'cm'
+  | 'pmm'
+  | 'pmg'
+  | 'pgg'
+  | 'cmm'
+  | 'p4'
+  | 'p4m'
+  | 'p4g'
+  | 'p3'
+  | 'p3m1'
+  | 'p31m'
+  | 'p6'
+  | 'p6m';

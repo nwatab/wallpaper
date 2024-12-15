@@ -46,94 +46,11 @@
   <div id="container">
     <div id="sidebar">
       <h2>Unit</h2>
-      <div id="motifSelection" class="previewGrid">
-        <!-- Motif previews -->
-        <div class="motifPreview" data-motif="circle" id="">
-          <svg id="source-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" width="64" height="64">
-            <g id="source-group">
-              <rect x="0.1" y="0.1" width="0.2" height="0.2" fill="red" transform="rotate(45 0.2 0.2)" />
-              <circle cx="0.7" cy="0.7" r="0.15" fill="blue" opacity="0.7" />
-              <line x1="0" y1="0" x2="1" y2="1" stroke="green" stroke-width="0.02" />
-              <polygon points="0.5,0.1 0.6,0.3 0.4,0.3" fill="purple" />
-              <path d="M0.2 0.8 Q0.5 0.5 0.8 0.8" stroke="orange" fill="none" stroke-width="0.02" />
-              <ellipse cx="0.3" cy="0.3" rx="0.1" ry="0.2" fill="cyan" transform="rotate(30 0.3 0.3)" />
-              <polyline points="0.1,0.9 0.2,0.7 0.3,0.8 0.4,0.6" stroke="black" fill="none" stroke-width="0.01" />
-              <rect x="0.6" y="0.1" width="0.25" height="0.1" fill="pink" />
-            </g>
-          </svg>
-        </div>
+      <div id="motif-gallery" class="previewGrid">
 
-        <!-- 新しいハウンドトゥースのモチーフプレビューを追加 -->
-        <div class="motifPreview" data-motif="houndstooth">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <!-- Add other motifs as needed -->
       </div>
       <h2>Group</h2>
-      <div id="groupSelection" class="previewGrid">
-        <!-- Wallpaper group previews -->
-        <div class="groupPreview" data-group="p1"
-          data-description="p1: The simplest group with only translation symmetries.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="p2" data-description="p2: Contains 180-degree rotational symmetries.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="pm" data-description="pm: Contains reflections along one axis.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="pg" data-description="pg: Contains glide reflections along one axis.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="cm"
-          data-description="cm: Contains reflections and glide reflections with axes parallel.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="pmm"
-          data-description="pmm: Contains reflections in two perpendicular directions and 180-degree rotations.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="pmg"
-          data-description="pmg: Contains reflections, glide reflections, and 180-degree rotations.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="pgg"
-          data-description="pgg: Contains glide reflections in two directions and 180-degree rotations.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="cmm"
-          data-description="cmm: Contains reflections and glide reflections in two directions, and 90-degree rotations.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="p4" data-description="p4: Contains 90-degree rotational symmetries.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="p4m"
-          data-description="p4m: Contains reflections and 90-degree rotations.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="p4g"
-          data-description="p4g: Contains glide reflections and 90-degree rotations.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="p3" data-description="p3: Contains 120-degree rotational symmetries.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="p3m1"
-          data-description="p3m1: Contains reflections and 120-degree rotations.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="p31m"
-          data-description="p31m: Contains reflections and 120-degree rotations in a different arrangement.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="p6" data-description="p6: Contains 60-degree rotational symmetries.">
-          <canvas width="50" height="50"></canvas>
-        </div>
-        <div class="groupPreview" data-group="p6m"
-          data-description="p6m: Contains reflections and 60-degree rotations.">
-          <canvas width="50" height="50"></canvas>
-        </div>
+      <div id="wallpaper-group-gallery" class="previewGrid">
       </div>
       <!-- Buy Me a Coffee ボタンを追加 -->
       <div id="buyMeACoffee">
@@ -142,10 +59,16 @@
           data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
           data-coffee-color="#ffffff"></script>
       </div>
+
+      <div id="githubLink" style="margin-top: 60px; text-align: left;">
+        <a href="https://github.com/nwatab/wallpaper" target="_blank" rel="noopener noreferrer">
+          <img src="/github-mark.svg" alt="GitHub Repository" width="24" height="24" />
+        </a>
+      </div>
     </div>
 
     <div id="mainContent" style="overflow: hidden;">
-      <svg id="wallpaper_svg" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"
+      <svg id="wallpaper-view" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"
         preserveAspectRatio="xMidYMid slice" style="display:block;">
         <defs> </defs>
       </svg>

@@ -1,245 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
-  <!-- Changed to 'en' since the content is in English -->
+<!-- Changed to 'en' since the content is in English -->
 
-  <head>
-    <!-- Google Tag Manager -->
-    <script>
-      (function (w, d, s, l, i) {
-        w[l] = w[l] || [];
-        w[l].push({
-          'gtm.start': new Date().getTime(),
-          event: 'gtm.js',
-        });
-        var f = d.getElementsByTagName(s)[0],
-          j = d.createElement(s),
-          dl = l != 'dataLayer' ? '&l=' + l : '';
-        j.async = true;
-        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-        f.parentNode.insertBefore(j, f);
-      })(window, document, 'script', 'dataLayer', 'GTM-5ZVVQJWM');
-    </script>
-    <!-- End Google Tag Manager -->
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="index.css" />
+<head>
+  <!-- Google Tag Manager -->
+  <script>
+    (function (w, d, s, l, i) {
+      w[l] = w[l] || [];
+      w[l].push({
+        'gtm.start': new Date().getTime(),
+        event: 'gtm.js',
+      });
+      var f = d.getElementsByTagName(s)[0],
+        j = d.createElement(s),
+        dl = l != 'dataLayer' ? '&l=' + l : '';
+      j.async = true;
+      j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+      f.parentNode.insertBefore(j, f);
+    })(window, document, 'script', 'dataLayer', 'GTM-5ZVVQJWM');
+  </script>
+  <!-- End Google Tag Manager -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="index.css" />
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap"
-      rel="stylesheet"
-    />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap"
+    rel="stylesheet" />
 
-    <!-- favicon -->
-    <link
-      rel="apple-touch-icon"
-      sizes="180x180"
-      href="./static/favicon/apple-touch-icon.png"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="32x32"
-      href="./static/favicon//favicon-32x32.png"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="16x16"
-      href="./static/favicon//favicon-16x16.png"
-    />
-    <link rel="manifest" href="./static/favicon/site.webmanifest" />
-    <title>Wallpaper Group Visualizer</title>
-  </head>
+  <!-- favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="//favicon-16x16.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <title>Wallpaper Group Visualizer</title>
+</head>
 
-  <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript
-      ><iframe
-        src="https://www.googletagmanager.com/ns.html?id=GTM-5ZVVQJWM"
-        height="0"
-        width="0"
-        style="display: none; visibility: hidden"
-      ></iframe
-    ></noscript>
-    <!-- End Google Tag Manager (noscript) -->
-    <div id="container">
-      <div id="sidebar">
-        <h2>Unit</h2>
-        <div id="motifSelection" class="previewGrid">
-          <!-- Motif previews -->
-          <div class="motifPreview" data-motif="circle">
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div class="motifPreview" data-motif="square">
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div class="motifPreview" data-motif="triangle">
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div class="motifPreview" data-motif="seigaiha">
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div class="motifPreview" data-motif="stripes">
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div class="motifPreview" data-motif="tartan">
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <!-- 新しいハウンドトゥースのモチーフプレビューを追加 -->
-          <div class="motifPreview" data-motif="houndstooth">
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <!-- Add other motifs as needed -->
-        </div>
-        <h2>Group</h2>
-        <div id="groupSelection" class="previewGrid">
-          <!-- Wallpaper group previews -->
-          <div
-            class="groupPreview"
-            data-group="p1"
-            data-description="p1: The simplest group with only translation symmetries."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="p2"
-            data-description="p2: Contains 180-degree rotational symmetries."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="pm"
-            data-description="pm: Contains reflections along one axis."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="pg"
-            data-description="pg: Contains glide reflections along one axis."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="cm"
-            data-description="cm: Contains reflections and glide reflections with axes parallel."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="pmm"
-            data-description="pmm: Contains reflections in two perpendicular directions and 180-degree rotations."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="pmg"
-            data-description="pmg: Contains reflections, glide reflections, and 180-degree rotations."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="pgg"
-            data-description="pgg: Contains glide reflections in two directions and 180-degree rotations."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="cmm"
-            data-description="cmm: Contains reflections and glide reflections in two directions, and 90-degree rotations."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="p4"
-            data-description="p4: Contains 90-degree rotational symmetries."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="p4m"
-            data-description="p4m: Contains reflections and 90-degree rotations."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="p4g"
-            data-description="p4g: Contains glide reflections and 90-degree rotations."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="p3"
-            data-description="p3: Contains 120-degree rotational symmetries."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="p3m1"
-            data-description="p3m1: Contains reflections and 120-degree rotations."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="p31m"
-            data-description="p31m: Contains reflections and 120-degree rotations in a different arrangement."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="p6"
-            data-description="p6: Contains 60-degree rotational symmetries."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-          <div
-            class="groupPreview"
-            data-group="p6m"
-            data-description="p6m: Contains reflections and 60-degree rotations."
-          >
-            <canvas width="50" height="50"></canvas>
-          </div>
-        </div>
-        <!-- Buy Me a Coffee ボタンを追加 -->
-        <div id="buyMeACoffee">
-          <script
-            type="text/javascript"
-            src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
-            data-name="bmc-button"
-            data-slug="nwta"
-            data-color="#FFDD00"
-            data-emoji=""
-            data-font="Cookie"
-            data-text="Buy me a coffee"
-            data-outline-color="#000000"
-            data-font-color="#000000"
-            data-coffee-color="#ffffff"
-          ></script>
-        </div>
+<body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5ZVVQJWM" height="0" width="0"
+      style="display: none; visibility: hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+  <div id="container">
+    <div id="sidebar">
+      <h2>Unit</h2>
+      <div id="motif-gallery" class="previewGrid">
+
+      </div>
+      <h2>Group</h2>
+      <div id="wallpaper-group-gallery" class="previewGrid">
+      </div>
+      <!-- Buy Me a Coffee ボタンを追加 -->
+      <div id="buyMeACoffee">
+        <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+          data-name="bmc-button" data-slug="nwta" data-color="#FFDD00" data-emoji="" data-font="Cookie"
+          data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
+          data-coffee-color="#ffffff"></script>
       </div>
 
-      <div id="mainContent">
-        <canvas id="patternCanvas"></canvas>
+      <div id="githubLink" style="margin-top: 60px; text-align: left;">
+        <a href="https://github.com/nwatab/wallpaper" target="_blank" rel="noopener noreferrer">
+          <img src="/github-mark.svg" alt="GitHub Repository" width="24" height="24" />
+        </a>
       </div>
     </div>
 
-    <script src="index.js"></script>
-  </body>
-</html>
+    <div id="mainContent" style="overflow: hidden;">
+      <svg id="wallpaper-view" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"
+        preserveAspectRatio="xMidYMid slice" style="display:block;">
+        <defs> </defs>
+      </svg>
+    </div>
+  </div>
+
+  <script src="index.js"></script>
+</body>

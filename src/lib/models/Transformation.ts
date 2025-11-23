@@ -1,4 +1,4 @@
-import { Point } from '@/types';
+import { Point } from '@/lib/types';
 import { Matrix } from './Matrix';
 export interface Transformation {
   applyToPoint(point: Point): Point;

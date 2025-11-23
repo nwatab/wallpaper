@@ -1,7 +1,7 @@
 import { Renderer } from './Renderer';
-import { Circle, Matrix, Motif, Rectangle, Shape } from '@/models';
-import { Vector2D } from '@/models';
-import { FundamentalRegion } from '@/types';
+import { Circle, Matrix, Motif, Rectangle, Shape } from '@/lib/models';
+import { Vector2D } from '@/lib/models';
+import { FundamentalRegion } from '@/lib/types';
 
 export class SVGRenderer implements Renderer {
   private svgContainer: SVGSVGElement;

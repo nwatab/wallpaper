@@ -1,5 +1,5 @@
-import { Motif } from '@/models';
-import { FundamentalRegion } from '@/types';
+import { Motif } from '@/lib/models';
+import { FundamentalRegion } from '@/lib/types';
 export interface Renderer {
   renderMotif(motif: Motif): void;
   renderFundamentalRegion(fundamentalRegion: FundamentalRegion): void;

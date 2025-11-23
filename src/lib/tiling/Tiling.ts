@@ -1,4 +1,4 @@
-import { Vector2D } from '@/models';
+import { Vector2D } from '@/lib/models';
 
 export class Tiling {
   constructor(private width: number, private height: number) {}

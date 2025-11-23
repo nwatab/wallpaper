@@ -1,5 +1,5 @@
-import { Transformation, Motif, Shape, Vector2D } from '@/models';
-import { FundamentalRegion, WallpaperGroupType } from '@/types';
+import { Transformation, Motif, Shape, Vector2D } from '@/lib/models';
+import { FundamentalRegion, WallpaperGroupType } from '@/lib/types';
 
 export abstract class WallpaperGroup {
   constructor(public groupType: WallpaperGroupType) {}

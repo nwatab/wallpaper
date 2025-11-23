@@ -1,4 +1,4 @@
-import { Motif, Vector2D } from '@/models';
+import { Motif, Vector2D } from '@/lib/models';
 
 export type FundamentalRegion = {
   motifs: Motif[];

@@ -1,18 +1,20 @@
-import { FundamentalRegion } from '@/types';
 import { WallpaperGroup } from '../WallpaperGroup';
+import { FundamentalRegion } from '@/lib/types';
 import {
   Motif,
   RectanguleMotif,
   SquareMotif,
   Transformation,
   Vector2D,
-} from '@/models';
+} from '@/lib/models';
 
-export class P1Group extends WallpaperGroup {
+export class P2Group extends WallpaperGroup {
   constructor() {
-    super('p1');
+    super('p2');
   }
   generateTransformations(): Transformation[] {
+    // P2グループの変換を実装
+    // TODO: 180度回転変換を追加
     return [];
   }
   computeTileVectors(
@@ -44,3 +46,5 @@ export class P1Group extends WallpaperGroup {
     }
   }
 }
+
+

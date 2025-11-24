@@ -1,6 +1,5 @@
 'use client';
 
-import { useAppStore } from '@/lib/store/appStore';
 import { Motif, Circle, SquareMotif, Rectangle } from '@/lib/models';
 import { SVGRenderer } from '@/lib/renderers';
 import { useEffect, useRef } from 'react';
@@ -53,9 +52,13 @@ function MotifPreview({
   );
 }
 
-export default function MotifGallery() {
-  const { selectedMotif, setSelectedMotif } = useAppStore();
-
+export default function MotifGallery({
+  selectedMotif,
+  setSelectedMotif,
+}: {
+  selectedMotif: Motif;
+  setSelectedMotif: (motif: Motif) => void;
+}) {
   return (
     <>
       {motifs.map((motif, index) => (

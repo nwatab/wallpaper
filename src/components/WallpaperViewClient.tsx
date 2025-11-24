@@ -1,13 +1,19 @@
 'use client';
 
-import { useAppStore } from '@/lib/store/appStore';
+import { Motif } from '@/lib/models';
+import { WallpaperGroup } from '@/lib/wallpaperGroups';
 import { SVGRenderer } from '@/lib/renderers';
 import { Tiling } from '@/lib/tiling';
 import { useEffect, useRef, useState } from 'react';
 
-export default function WallpaperView() {
+export default function WallpaperView({
+  selectedMotif,
+  selectedWallpaperGroup,
+}: {
+  selectedMotif: Motif;
+  selectedWallpaperGroup: WallpaperGroup;
+}) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const { selectedMotif, selectedWallpaperGroup } = useAppStore();
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
@@ -49,7 +55,6 @@ export default function WallpaperView() {
     // 3. タイリングを行い、壁紙全体を生成
     const tiling = new Tiling(dimensions.width, dimensions.height);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [tileVectorA, tileVectorB] = fundamentalRegion.tileVectors.map((v) =>
       v.scale(64),
     );

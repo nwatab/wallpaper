@@ -1,6 +1,6 @@
 'use client';
 
-import { useAppStore } from '@/lib/store/appStore';
+import { Motif } from '@/lib/models';
 import { WallpaperGroup, P1Group } from '@/lib/wallpaperGroups';
 import { WallpaperGroupType } from '@/lib/types';
 import { SVGRenderer } from '@/lib/renderers';
@@ -14,13 +14,14 @@ function GroupPreview({
   group,
   isSelected,
   onClick,
+  selectedMotif,
 }: {
   group: WallpaperGroup;
   isSelected: boolean;
   onClick: () => void;
+  selectedMotif: Motif;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const { selectedMotif } = useAppStore();
 
   useEffect(() => {
     if (svgRef.current && selectedMotif) {
@@ -54,9 +55,15 @@ function GroupPreview({
   );
 }
 
-export default function WallpaperGroupGallery() {
-  const { selectedWallpaperGroup, setSelectedWallpaperGroup } = useAppStore();
-
+export default function WallpaperGroupGallery({
+  selectedMotif,
+  selectedWallpaperGroup,
+  setSelectedWallpaperGroup,
+}: {
+  selectedMotif: Motif;
+  selectedWallpaperGroup: WallpaperGroup;
+  setSelectedWallpaperGroup: (group: WallpaperGroup) => void;
+}) {
   return (
     <>
       {groups.map(({ instance }, index) => (
@@ -65,6 +72,7 @@ export default function WallpaperGroupGallery() {
           group={instance}
           isSelected={selectedWallpaperGroup === instance}
           onClick={() => setSelectedWallpaperGroup(instance)}
+          selectedMotif={selectedMotif}
         />
       ))}
     </>

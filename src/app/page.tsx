@@ -1,11 +1,7 @@
-'use client';
-
-import { useState } from 'react';
 import MotifGallery from '@/components/MotifGalleryClient';
 import WallpaperGroupGallery from '@/components/WallpaperGroupGalleryClient';
 import WallpaperView from '@/components/WallpaperViewClient';
-import { Motif, Circle, SquareMotif, Rectangle } from '@/lib/models';
-import { WallpaperGroup } from '@/lib/wallpaperGroups';
+import { Circle, SquareMotif, Rectangle } from '@/lib/models';
 import { P1Group } from '@/lib/wallpaperGroups/implementations';
 import Script from 'next/script';
 import Image from 'next/image';
@@ -17,27 +13,25 @@ const defaultMotif = new SquareMotif(1, [
   new Circle(0.6, 0.6, 0.2, 'blue'),
 ]);
 
-export default function Home() {
-  const [selectedMotif, setSelectedMotif] = useState<Motif>(defaultMotif);
-  const [selectedWallpaperGroup, setSelectedWallpaperGroup] =
-    useState<WallpaperGroup>(new P1Group());
+const defaultWallpaperGroup = new P1Group();
 
+export default function Home() {
   return (
     <div className="flex h-screen">
       <div className="max-w-64 min-w-16 bg-gray-100 p-2.5 pb-[90px] overflow-y-auto">
         <h2 className="mt-10">Unit</h2>
         <div className="flex flex-wrap">
           <MotifGallery
-            selectedMotif={selectedMotif}
-            setSelectedMotif={setSelectedMotif}
+            selectedMotif={defaultMotif}
+            setSelectedMotif={() => {}}
           />
         </div>
         <h2 className="mt-10">Group</h2>
         <div className="flex flex-wrap">
           <WallpaperGroupGallery
-            selectedMotif={selectedMotif}
-            selectedWallpaperGroup={selectedWallpaperGroup}
-            setSelectedWallpaperGroup={setSelectedWallpaperGroup}
+            selectedMotif={defaultMotif}
+            selectedWallpaperGroup={defaultWallpaperGroup}
+            setSelectedWallpaperGroup={() => {}}
           />
         </div>
 
@@ -74,8 +68,8 @@ export default function Home() {
 
       <div className="flex-grow relative overflow-hidden">
         <WallpaperView
-          selectedMotif={selectedMotif}
-          selectedWallpaperGroup={selectedWallpaperGroup}
+          selectedMotif={defaultMotif}
+          selectedWallpaperGroup={defaultWallpaperGroup}
         />
       </div>
     </div>

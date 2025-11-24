@@ -14,14 +14,22 @@ const defaultMotif = new SquareMotif(1, [
 
 const motifs: Motif[] = [defaultMotif];
 
-function MotifPreview({ motif, isSelected, onClick }: { motif: Motif; isSelected: boolean; onClick: () => void }) {
+function MotifPreview({
+  motif,
+  isSelected,
+  onClick,
+}: {
+  motif: Motif;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (svgRef.current) {
       const renderer = new SVGRenderer(svgRef.current);
       renderer.clear();
-      
+
       // モチーフを描画
       renderer.renderMotif(motif);
     }
@@ -29,11 +37,18 @@ function MotifPreview({ motif, isSelected, onClick }: { motif: Motif; isSelected
 
   return (
     <div
-      className={`motif-preview ${isSelected ? 'selected' : ''}`}
+      className={`inline-block m-1.5 cursor-pointer border ${
+        isSelected ? 'border-2 border-purple-500' : 'border border-gray-300'
+      } w-16 h-16 overflow-hidden`}
       onClick={onClick}
-      style={{ cursor: 'pointer' }}
     >
-      <svg ref={svgRef} viewBox="0 0 1 1" width={64} height={64} xmlns="http://www.w3.org/2000/svg" />
+      <svg
+        ref={svgRef}
+        viewBox="0 0 1 1"
+        width={64}
+        height={64}
+        xmlns="http://www.w3.org/2000/svg"
+      />
     </div>
   );
 }

@@ -26,7 +26,7 @@ function GroupPreview({
     if (svgRef.current && selectedMotif) {
       const renderer = new SVGRenderer(svgRef.current);
       renderer.clear();
-      
+
       const fundamentalRegion = group.createFundamentalRegion(selectedMotif);
       renderer.renderFundamentalRegion(fundamentalRegion);
     }
@@ -34,11 +34,22 @@ function GroupPreview({
 
   return (
     <div
-      className={`group-preview ${isSelected ? 'selected' : ''}`}
+      className={`inline-block m-1.5 cursor-pointer border ${
+        isSelected ? 'border-2 border-purple-500' : 'border border-gray-300'
+      } w-16 h-16 overflow-hidden box-border relative group`}
       onClick={onClick}
-      style={{ cursor: 'pointer' }}
+      data-description={group.groupType}
     >
-      <svg ref={svgRef} viewBox="0 0 1 1" width={64} height={64} xmlns="http://www.w3.org/2000/svg" />
+      <svg
+        ref={svgRef}
+        viewBox="0 0 1 1"
+        width={64}
+        height={64}
+        xmlns="http://www.w3.org/2000/svg"
+      />
+      <div className="absolute bottom-[105%] left-[-20%] transform translate-x-0 bg-black/75 text-white px-2.5 py-1.5 rounded whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-100 z-[100] group-hover:opacity-100">
+        {group.groupType}
+      </div>
     </div>
   );
 }

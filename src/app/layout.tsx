@@ -1,17 +1,16 @@
-import type { Metadata } from "next";
-import { EB_Garamond } from "next/font/google";
-import "./globals.css";
-import "./styles/index.css";
-import Script from "next/script";
+import type { Metadata } from 'next';
+import { EB_Garamond } from 'next/font/google';
+import './globals.css';
+import Script from 'next/script';
 
 const ebGaramond = EB_Garamond({
-  variable: "--font-eb-garamond",
-  subsets: ["latin"],
+  variable: '--font-eb-garamond',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Wallpaper Group Visualizer",
-  description: "Visualize wallpaper groups with interactive patterns",
+  title: 'Wallpaper Group Visualizer',
+  description: 'Visualize wallpaper groups with interactive patterns',
 };
 
 export default function RootLayout({
@@ -22,11 +21,25 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/apple-touch-icon.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/favicon-32x32.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/favicon-16x16.png"
+        />
         <link rel="manifest" href="/site.webmanifest" />
-        
+
         {/* Google Tag Manager */}
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`

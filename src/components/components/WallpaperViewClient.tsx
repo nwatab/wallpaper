@@ -27,7 +27,12 @@ export default function WallpaperView() {
   }, []);
 
   useEffect(() => {
-    if (!svgRef.current || !selectedMotif || !selectedWallpaperGroup || dimensions.width === 0) {
+    if (
+      !svgRef.current ||
+      !selectedMotif ||
+      !selectedWallpaperGroup ||
+      dimensions.width === 0
+    ) {
       return;
     }
 
@@ -38,13 +43,16 @@ export default function WallpaperView() {
     selectedWallpaperGroup.computeTileVectors(selectedMotif);
 
     // 2. ファンダメンタル・リージョンを生成
-    const fundamentalRegion = selectedWallpaperGroup.createFundamentalRegion(selectedMotif);
+    const fundamentalRegion =
+      selectedWallpaperGroup.createFundamentalRegion(selectedMotif);
 
     // 3. タイリングを行い、壁紙全体を生成
     const tiling = new Tiling(dimensions.width, dimensions.height);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [tileVectorA, tileVectorB] = fundamentalRegion.tileVectors.map((v: any) => v.scale(64));
+    const [tileVectorA, tileVectorB] = fundamentalRegion.tileVectors.map((v) =>
+      v.scale(64),
+    );
     const tileVectors = tiling.generateWallpaperMotif(tileVectorA, tileVectorB);
 
     // 4. 描画を実行
@@ -59,7 +67,7 @@ export default function WallpaperView() {
       width="100%"
       height="100%"
       preserveAspectRatio="xMidYMid slice"
-      style={{ display: 'block' }}
+      className="block"
     >
       <defs />
     </svg>

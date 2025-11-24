@@ -10,18 +10,18 @@ import Image from 'next/image';
 export default function Home() {
   return (
     <AppProvider>
-      <div id="container">
-        <div id="sidebar">
-          <h2>Unit</h2>
-          <div id="motif-gallery" className="previewGrid">
+      <div className="flex h-screen">
+        <div className="max-w-64 min-w-16 bg-gray-100 p-2.5 pb-[90px] overflow-y-auto">
+          <h2 className="mt-10">Unit</h2>
+          <div className="flex flex-wrap">
             <MotifGallery />
           </div>
-          <h2>Group</h2>
-          <div id="wallpaper-group-gallery" className="previewGrid">
+          <h2 className="mt-10">Group</h2>
+          <div className="flex flex-wrap">
             <WallpaperGroupGallery />
           </div>
-          
-          <div id="buyMeACoffee">
+
+          <div className="fixed bottom-2.5 left-2.5 z-[1000] text-left">
             <Script
               src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
               data-name="bmc-button"
@@ -36,14 +36,23 @@ export default function Home() {
             />
           </div>
 
-          <div id="githubLink" style={{ marginTop: '60px', textAlign: 'left' }}>
-            <a href="https://github.com/nwatab/wallpaper" target="_blank" rel="noopener noreferrer">
-              <Image src="/github-mark.svg" alt="GitHub Repository" width={24} height={24} />
+          <div className="mt-[60px] text-left">
+            <a
+              href="https://github.com/nwatab/wallpaper"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Image
+                src="/github-mark.svg"
+                alt="GitHub Repository"
+                width={24}
+                height={24}
+              />
             </a>
           </div>
         </div>
 
-        <div id="mainContent" style={{ overflow: 'hidden' }}>
+        <div className="flex-grow relative overflow-hidden">
           <WallpaperView />
         </div>
       </div>

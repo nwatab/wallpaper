@@ -1,10 +1,11 @@
+'use client';
+
 import MotifGallery from '@/components/MotifGalleryClient';
 import WallpaperGroupGallery from '@/components/WallpaperGroupGalleryClient';
 import WallpaperView from '@/components/WallpaperViewClient';
 import { Circle, SquareMotif, Rectangle } from '@/lib/models';
 import { P1Group } from '@/lib/wallpaperGroups/implementations';
 import Script from 'next/script';
-import Image from 'next/image';
 
 // デフォルトのモチーフを作成
 const defaultMotif = new SquareMotif(1, [
@@ -56,7 +57,7 @@ export default function Home() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Image
+            <img
               src="/github-mark.svg"
               alt="GitHub Repository"
               width={24}

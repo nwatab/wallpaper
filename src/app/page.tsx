@@ -58,7 +58,7 @@ export default function Home() {
             rel="noopener noreferrer"
           >
             <img
-              src="/github-mark.svg"
+              src="./github-mark.svg"
               alt="GitHub Repository"
               width={24}
               height={24}

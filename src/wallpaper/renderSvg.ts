@@ -1,5 +1,5 @@
 import type { Rect, UnitTemplate, Scene, Pose } from './types';
-import { compileUnit, buildInstances, renderSvg } from './engine';
+import { compileUnit, buildOrbitElements, renderSvg } from './engine';
 import { motifs } from './motifs';
 
 export const renderWallpaperSvg = (args: {
@@ -24,7 +24,7 @@ export const renderWallpaperSvg = (args: {
     translate: { x: 0, y: 0 },
   };
 
-  const { instances, uvToWorld } = buildInstances({
+  const { orbitElements, uvToWorld } = buildOrbitElements({
     compiled,
     viewport,
     pose,
@@ -39,7 +39,7 @@ export const renderWallpaperSvg = (args: {
       w: viewport.width,
       h: viewport.height,
     },
-    instances,
+    orbitElements,
     motifSvg: motif,
   };
 

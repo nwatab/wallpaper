@@ -1,4 +1,11 @@
-import type { CompiledUnit, Instance, Mat2D, Rect, Vec2, Pose } from '../types';
+import type {
+  CompiledUnit,
+  OrbitElement,
+  Mat2D,
+  Rect,
+  Vec2,
+  Pose,
+} from '../types';
 import {
   compose,
   identity,
@@ -27,7 +34,7 @@ const poseToMatrix = (pose: Pose): Mat2D => {
     : identity();
   return compose(
     t,
-    compose(rotateDeg(pose.rotationDeg), scaleUniform(pose.scale))
+    compose(rotateDeg(pose.rotationDeg), scaleUniform(pose.scale)),
   );
 };
 
@@ -42,7 +49,7 @@ const rectCorners = (r: Rect): Vec2[] => [
 // ビューポートをUV座標系での境界に変換
 const uvBoundsOfViewport = (
   worldToUv: Mat2D,
-  viewport: Rect
+  viewport: Rect,
 ): { uMin: number; uMax: number; vMin: number; vMax: number } => {
   const corners = rectCorners(viewport).map((p) => applyToPoint(worldToUv, p));
   const us = corners.map((p) => p.x);
@@ -55,20 +62,20 @@ const uvBoundsOfViewport = (
   };
 };
 
-export type BuildInstancesOptions = {
+export type BuildOrbitElementsOptions = {
   overscanCells?: number; // viewport外に余分に何セル敷くか
 };
 
 /**
  * Tiling層: 画面を覆うように並べる計算
- * CompiledUnitとviewport情報からInstancesを生成する
+ * CompiledUnitとviewport情報からOrbitElementsを生成する
  */
-export function buildInstances(args: {
+export function buildOrbitElements(args: {
   compiled: CompiledUnit;
   viewport: Rect;
   pose: Pose;
-  options?: BuildInstancesOptions;
-}): { instances: Instance[]; uvToWorld: Mat2D } {
+  options?: BuildOrbitElementsOptions;
+}): { orbitElements: OrbitElement[]; uvToWorld: Mat2D } {
   const { compiled, viewport, pose } = args;
   const overscan = args.options?.overscanCells ?? 1;
 
@@ -86,7 +93,7 @@ export function buildInstances(args: {
   const jMin = Math.floor(b.vMin) - overscan;
   const jMax = Math.ceil(b.vMax) + overscan;
 
-  const instances: Instance[] = [];
+  const orbitElements: OrbitElement[] = [];
 
   for (let i = iMin; i <= iMax; i++) {
     for (let j = jMin; j <= jMax; j++) {
@@ -101,12 +108,12 @@ export function buildInstances(args: {
         // uv local -> world
         const transform = compose(uvToWorld, uvLocalToUv);
 
-        instances.push({
+        orbitElements.push({
           transform,
         });
       }
     }
   }
 
-  return { instances, uvToWorld };
+  return { orbitElements, uvToWorld };
 }

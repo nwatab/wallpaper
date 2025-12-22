@@ -17,7 +17,7 @@ const pointsToPathD = (pts: Vec2[]): string => {
  */
 export const polygonUvToWorldPoints = (
   polygon: PolygonUV,
-  uvToWorld: Mat2D
+  uvToWorld: Mat2D,
 ): Vec2[] => polygon.map((p) => applyToPoint(uvToWorld, { x: p.u, y: p.v }));
 
 /**
@@ -36,7 +36,7 @@ export function createDebugPaths(args: {
     debugPaths.push(
       `<path d="${pointsToPathD(
         regionWorld,
-      )}" fill="none" stroke="magenta" stroke-width="2" />`
+      )}" fill="none" stroke="magenta" stroke-width="2" />`,
     );
   }
 
@@ -51,7 +51,7 @@ export function createDebugPaths(args: {
   debugPaths.push(
     `<path d="${pointsToPathD(
       cellWorld,
-    )}" fill="none" stroke="navy" stroke-width="1" />`
+    )}" fill="none" stroke="navy" stroke-width="1" />`,
   );
 
   return debugPaths;
@@ -61,15 +61,21 @@ export function createDebugPaths(args: {
  * Render層: バックエンド依存の描画
  * SceneからSVG文字列を生成する（SVGの都合のみを担当）
  */
-export function renderSvg(scene: Scene, debug?: boolean, debugData?: {
-  regionUv?: PolygonUV;
-  uvToWorld: Mat2D;
-}): string {
-  const { viewBox, instances, motifSvg } = scene;
+export function renderSvg(
+  scene: Scene,
+  debug?: boolean,
+  debugData?: {
+    regionUv?: PolygonUV;
+    uvToWorld: Mat2D;
+  },
+): string {
+  const { viewBox, orbitElements, motifSvg } = scene;
 
   // インスタンスをSVGグループに変換
-  const groups = instances
-    .map((inst) => `<g transform="${toSvgMatrix(inst.transform)}">${motifSvg}</g>`)
+  const groups = orbitElements
+    .map(
+      (inst) => `<g transform="${toSvgMatrix(inst.transform)}">${motifSvg}</g>`,
+    )
     .join('\n');
 
   // デバッグパスの生成

@@ -60,13 +60,7 @@ export type Pose = {
   translate?: Vec2;
 };
 
-export type MotifInstance = {
-  transform: Affine2D; // uv -> xy including cell translation and op-in-cell
-  cell: { i: number; j: number };
-  opIndex: number;
-};
-
-// 3層アーキテクチャ用の新しい型定義
+// 3層アーキテクチャ用の型定義
 export type Mat2D = Affine2D; // エイリアス（既存のAffine2Dと同じ）
 
 export type CompiledUnit = {
@@ -75,12 +69,12 @@ export type CompiledUnit = {
   regionUv?: PolygonUV; // デバッグ用（optional）
 };
 
-export type Instance = { 
-  transform: Mat2D; 
+export type OrbitElement = {
+  transform: Mat2D;
 };
 
 export type Scene = {
   viewBox: { x: number; y: number; w: number; h: number };
-  instances: Instance[];
+  orbitElements: OrbitElement[];
   motifSvg: string;
 };

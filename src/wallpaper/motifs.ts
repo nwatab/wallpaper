@@ -49,4 +49,38 @@ export const motifs: Record<string, string> = {
             fill="none" stroke="blue" stroke-width="0.02"/>
     </g>
   `,
+
+  // pg群向け: 基本領域 u∈[0,1], v∈[0,0.5] 内のモチーフ
+  // グライド反射によって美しいパターンが生まれる矢印デザイン
+  'motif-pg-arrow': `
+    <g>
+      <!-- 基本領域の境界 -->
+      <rect x="0" y="0" width="1" height="0.5" fill="none" stroke="gray" stroke-width="0.01" opacity="0.3"/>
+      
+      <!-- メインの矢印 -->
+      <path d="M 0.1 0.25 L 0.7 0.25 L 0.6 0.15 M 0.7 0.25 L 0.6 0.35" 
+            fill="none" stroke="red" stroke-width="0.03" stroke-linecap="round"/>
+      
+      <!-- 矢印の胴体を太く -->
+      <rect x="0.1" y="0.22" width="0.6" height="0.06" fill="red" rx="0.03"/>
+      
+      <!-- 矢印の先端 -->
+      <path d="M 0.7 0.25 L 0.85 0.25 L 0.75 0.15 M 0.85 0.25 L 0.75 0.35 Z" 
+            fill="red" stroke="red" stroke-width="0.02"/>
+      
+      <!-- 装飾的なドット -->
+      <circle cx="0.2" cy="0.1" r="0.02" fill="blue"/>
+      <circle cx="0.4" cy="0.1" r="0.02" fill="blue"/>
+      <circle cx="0.6" cy="0.1" r="0.02" fill="blue"/>
+      <circle cx="0.8" cy="0.1" r="0.02" fill="blue"/>
+      
+      <!-- 下部の装飾線 -->
+      <path d="M 0.1 0.4 Q 0.3 0.45 0.5 0.4 Q 0.7 0.35 0.9 0.4" 
+            fill="none" stroke="green" stroke-width="0.02"/>
+      
+      <!-- 小さな三角形の装飾 -->
+      <path d="M 0.05 0.05 L 0.15 0.05 L 0.1 0.15 Z" fill="orange"/>
+      <path d="M 0.85 0.45 L 0.95 0.45 L 0.9 0.35 Z" fill="orange"/>
+    </g>
+  `,
 };

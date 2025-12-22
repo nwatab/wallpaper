@@ -66,4 +66,26 @@ export const unitTemplates: UnitTemplate[] = [
     motifId: 'motif-pm-leaf',
     defaultPose: { scale: 120, rotationDeg: 0 },
   },
+
+  // pg: rectangular lattice with parallel glide reflections
+  {
+    id: 'pg-rectangular-horizontal-glides',
+    group: 'pg',
+    label: 'Rectangular with horizontal glide reflections',
+    basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } }, // rectangular lattice
+    regionUv: [
+      { u: 0, v: 0 },
+      { u: 1, v: 0 },
+      { u: 1, v: 0.5 }, // fundamental region is half the unit cell (horizontal)
+      { u: 0, v: 0.5 },
+    ],
+    opsInCellUv: [
+      { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
+      // glide reflection: reflect across v = 0.5 and translate by (0.5, 0)
+      // (u,v) -> (u + 0.5, 1 - v)
+      { a: 1, b: 0, c: 0, d: -1, e: 0.5, f: 1 },
+    ],
+    motifId: 'motif-pg-arrow',
+    defaultPose: { scale: 120, rotationDeg: 0 },
+  },
 ];

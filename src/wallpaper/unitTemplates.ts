@@ -45,4 +45,25 @@ export const unitTemplates: UnitTemplate[] = [
     motifId: 'motif-b',
     defaultPose: { scale: 120, rotationDeg: 0 },
   },
+
+  // pm: rectangular lattice with parallel mirror lines
+  {
+    id: 'pm-rectangular-vertical-mirrors',
+    group: 'pm',
+    label: 'Rectangular with vertical mirrors',
+    basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } }, // rectangular lattice
+    regionUv: [
+      { u: 0, v: 0 },
+      { u: 0.5, v: 0 }, // fundamental region is half the unit cell
+      { u: 0.5, v: 1 },
+      { u: 0, v: 1 },
+    ],
+    opsInCellUv: [
+      { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
+      // vertical reflection across u = 0.5: (u,v) -> (1-u,v)
+      { a: -1, b: 0, c: 0, d: 1, e: 1, f: 0 },
+    ],
+    motifId: 'motif-pm-leaf',
+    defaultPose: { scale: 120, rotationDeg: 0 },
+  },
 ];

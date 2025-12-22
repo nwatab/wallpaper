@@ -275,10 +275,6 @@ export default function Page() {
               </div>
             </div>
           )}
-
-          <div style={{ fontSize: 11, opacity: 0.6, marginTop: 8 }}>
-            壁紙は画面実寸に合わせて自動再生成します（メニューは上に重ね表示）。
-          </div>
         </div>
       </aside>
 

@@ -27,11 +27,12 @@ export function createDebugPaths(args: {
   regionUv?: PolygonUV;
   uvToWorld: Mat2D;
   tilePositions?: { i: number; j: number }[];
+  debugOptions: { showRegions: boolean; showBravaisLattice: boolean };
 }): string[] {
-  const { regionUv, uvToWorld, tilePositions } = args;
+  const { regionUv, uvToWorld, tilePositions, debugOptions } = args;
   const debugPaths: string[] = [];
 
-  if (regionUv) {
+  if (debugOptions.showRegions && regionUv) {
     if (tilePositions && tilePositions.length > 0) {
       // fundamental region boundaries for all tiles
       for (const { i, j } of tilePositions) {
@@ -59,14 +60,30 @@ export function createDebugPaths(args: {
   }
 
   // unit cell boundaries for all tiles
-  if (tilePositions && tilePositions.length > 0) {
-    // すべてのタイル位置にunit cellの境界線を描画
-    for (const { i, j } of tilePositions) {
+  if (debugOptions.showBravaisLattice) {
+    if (tilePositions && tilePositions.length > 0) {
+      // すべてのタイル位置にunit cellの境界線を描画
+      for (const { i, j } of tilePositions) {
+        const cellUv: PolygonUV = [
+          { u: i, v: j },
+          { u: i + 1, v: j },
+          { u: i + 1, v: j + 1 },
+          { u: i, v: j + 1 },
+        ];
+        const cellWorld = polygonUvToWorldPoints(cellUv, uvToWorld);
+        debugPaths.push(
+          `<path d="${pointsToPathD(
+            cellWorld,
+          )}" fill="none" stroke="navy" stroke-width="1" />`,
+        );
+      }
+    } else {
+      // fallback: origin cell only
       const cellUv: PolygonUV = [
-        { u: i, v: j },
-        { u: i + 1, v: j },
-        { u: i + 1, v: j + 1 },
-        { u: i, v: j + 1 },
+        { u: 0, v: 0 },
+        { u: 1, v: 0 },
+        { u: 1, v: 1 },
+        { u: 0, v: 1 },
       ];
       const cellWorld = polygonUvToWorldPoints(cellUv, uvToWorld);
       debugPaths.push(
@@ -75,22 +92,7 @@ export function createDebugPaths(args: {
         )}" fill="none" stroke="navy" stroke-width="1" />`,
       );
     }
-  } else {
-    // fallback: origin cell only
-    const cellUv: PolygonUV = [
-      { u: 0, v: 0 },
-      { u: 1, v: 0 },
-      { u: 1, v: 1 },
-      { u: 0, v: 1 },
-    ];
-    const cellWorld = polygonUvToWorldPoints(cellUv, uvToWorld);
-    debugPaths.push(
-      `<path d="${pointsToPathD(
-        cellWorld,
-      )}" fill="none" stroke="navy" stroke-width="1" />`,
-    );
   }
-
   return debugPaths;
 }
 
@@ -100,7 +102,7 @@ export function createDebugPaths(args: {
  */
 export function renderSvg(
   scene: Scene,
-  debug?: boolean,
+  debugOptions?: { showRegions: boolean; showBravaisLattice: boolean },
   debugData?: {
     regionUv?: PolygonUV;
     uvToWorld: Mat2D;
@@ -118,8 +120,12 @@ export function renderSvg(
 
   // デバッグパスの生成
   let debugPaths: string[] = [];
-  if (debug && debugData) {
-    debugPaths = createDebugPaths(debugData);
+  if (
+    debugOptions &&
+    debugData &&
+    (debugOptions.showRegions || debugOptions.showBravaisLattice)
+  ) {
+    debugPaths = createDebugPaths({ ...debugData, debugOptions });
   }
 
   const svg = `
@@ -130,7 +136,12 @@ export function renderSvg(
       height="${viewBox.h}"
     >
       ${groups}
-      ${debug ? debugPaths.join('\n') : ''}
+      ${
+        debugOptions &&
+        (debugOptions.showRegions || debugOptions.showBravaisLattice)
+          ? debugPaths.join('\n')
+          : ''
+      }
     </svg>
   `.trim();
 

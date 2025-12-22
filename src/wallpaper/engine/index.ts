@@ -11,4 +11,10 @@ export type { BuildOrbitElementsOptions } from './tiling';
 export { renderSvg, createDebugPaths, polygonUvToWorldPoints } from './render';
 
 // 共通型定義
-export type { CompiledUnit, OrbitElement, Scene, Mat2D } from '../types';
+export type {
+  CompiledUnit,
+  OrbitElement,
+  Scene,
+  Mat2D,
+  DebugOptions,
+} from '../types';

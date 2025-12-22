@@ -33,7 +33,9 @@ function useElementSize<T extends HTMLElement>(): [React.RefObject<T>, Size] {
 
 export default function Page() {
   const [selectedId, setSelectedId] = useState(unitTemplates[0]?.id ?? '');
-  const [debug, setDebug] = useState(false);
+  const [showRegions, setShowRegions] = useState(false);
+  const [showBravaisLattice, setShowBravaisLattice] = useState(false);
+  const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
 
   const selectedTemplate = useMemo(() => {
     const t = unitTemplates.find((x) => x.id === selectedId);
@@ -50,9 +52,18 @@ export default function Page() {
     return renderWallpaperSvg({
       template: selectedTemplate,
       viewport: { x: 0, y: 0, width: wallSize.width, height: wallSize.height },
-      debug,
+      debugOptions: {
+        showRegions,
+        showBravaisLattice,
+      },
     });
-  }, [selectedTemplate, wallSize.width, wallSize.height, debug]);
+  }, [
+    selectedTemplate,
+    wallSize.width,
+    wallSize.height,
+    showRegions,
+    showBravaisLattice,
+  ]);
 
   const templatesByGroup = useMemo(() => {
     const map = new Map<string, typeof unitTemplates>();
@@ -143,22 +154,95 @@ export default function Page() {
             </select>
           </label>
 
-          <label
+          {/* Advanced Options */}
+          <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 12,
-              opacity: 0.9,
+              marginTop: 8,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              borderRadius: 8,
             }}
           >
-            <input
-              type="checkbox"
-              checked={debug}
-              onChange={(e) => setDebug(e.target.checked)}
-            />
-            Debug（region/cell境界表示）
-          </label>
+            <button
+              onClick={() =>
+                setAdvancedOptionsExpanded(!advancedOptionsExpanded)
+              }
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                width: '100%',
+                padding: 12,
+                background: 'none',
+                border: 'none',
+                borderRadius: advancedOptionsExpanded ? '8px 8px 0 0' : '8px',
+                color: 'inherit',
+                fontSize: 12,
+                cursor: 'pointer',
+                outline: 'none',
+                textAlign: 'left',
+              }}
+            >
+              <span
+                style={{
+                  transform: advancedOptionsExpanded
+                    ? 'rotate(90deg)'
+                    : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                  fontSize: 10,
+                }}
+              >
+                ▶
+              </span>
+              Advanced Options
+            </button>
+
+            {advancedOptionsExpanded && (
+              <div
+                style={{
+                  padding: '0 12px 12px 12px',
+                  borderTop: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 12,
+                    opacity: 0.9,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={showRegions}
+                    onChange={(e) => setShowRegions(e.target.checked)}
+                  />
+                  Show regions (fundamental domains)
+                </label>
+
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 12,
+                    opacity: 0.9,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={showBravaisLattice}
+                    onChange={(e) => setShowBravaisLattice(e.target.checked)}
+                  />
+                  Show Bravais lattice (cell boundaries)
+                </label>
+              </div>
+            )}
+          </div>
 
           {selectedTemplate && (
             <div

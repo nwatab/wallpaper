@@ -60,6 +60,11 @@ export type Pose = {
   translate?: Vec2;
 };
 
+export type DebugOptions = {
+  showRegions: boolean;
+  showBravaisLattice: boolean;
+};
+
 // 3層アーキテクチャ用の型定義
 export type Mat2D = Affine2D; // エイリアス（既存のAffine2Dと同じ）
 

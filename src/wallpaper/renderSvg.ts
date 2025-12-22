@@ -1,13 +1,13 @@
-import type { Rect, UnitTemplate, Scene, Pose } from './types';
+import type { Rect, UnitTemplate, Scene, Pose, DebugOptions } from './types';
 import { compileUnit, buildOrbitElements, renderSvg } from './engine';
 import { motifs } from './motifs';
 
 export const renderWallpaperSvg = (args: {
   template: UnitTemplate;
   viewport: Rect;
-  debug?: boolean;
+  debugOptions?: DebugOptions;
 }): string => {
-  const { template, viewport, debug } = args;
+  const { template, viewport, debugOptions } = args;
 
   const motif = motifs[template.motifId];
   if (!motif) {
@@ -43,7 +43,7 @@ export const renderWallpaperSvg = (args: {
     motifSvg: motif,
   };
 
-  return renderSvg(scene, debug, {
+  return renderSvg(scene, debugOptions, {
     regionUv: compiled.regionUv,
     uvToWorld,
     tilePositions,

@@ -26,33 +26,70 @@ export const polygonUvToWorldPoints = (
 export function createDebugPaths(args: {
   regionUv?: PolygonUV;
   uvToWorld: Mat2D;
+  tilePositions?: { i: number; j: number }[];
 }): string[] {
-  const { regionUv, uvToWorld } = args;
+  const { regionUv, uvToWorld, tilePositions } = args;
   const debugPaths: string[] = [];
 
   if (regionUv) {
-    // fundamental region boundary (origin cell only)
-    const regionWorld = polygonUvToWorldPoints(regionUv, uvToWorld);
-    debugPaths.push(
-      `<path d="${pointsToPathD(
-        regionWorld,
-      )}" fill="none" stroke="magenta" stroke-width="2" />`,
-    );
+    if (tilePositions && tilePositions.length > 0) {
+      // fundamental region boundaries for all tiles
+      for (const { i, j } of tilePositions) {
+        // 各タイルのfundamental regionを描画（regionUvを各タイル位置に変換）
+        const regionInTile: PolygonUV = regionUv.map((p) => ({
+          u: p.u + i,
+          v: p.v + j,
+        }));
+        const regionWorld = polygonUvToWorldPoints(regionInTile, uvToWorld);
+        debugPaths.push(
+          `<path d="${pointsToPathD(
+            regionWorld,
+          )}" fill="none" stroke="magenta" stroke-width="2" />`,
+        );
+      }
+    } else {
+      // fallback: fundamental region boundary (origin cell only)
+      const regionWorld = polygonUvToWorldPoints(regionUv, uvToWorld);
+      debugPaths.push(
+        `<path d="${pointsToPathD(
+          regionWorld,
+        )}" fill="none" stroke="magenta" stroke-width="2" />`,
+      );
+    }
   }
 
-  // unit cell boundary (origin cell only)
-  const cellUv: PolygonUV = [
-    { u: 0, v: 0 },
-    { u: 1, v: 0 },
-    { u: 1, v: 1 },
-    { u: 0, v: 1 },
-  ];
-  const cellWorld = polygonUvToWorldPoints(cellUv, uvToWorld);
-  debugPaths.push(
-    `<path d="${pointsToPathD(
-      cellWorld,
-    )}" fill="none" stroke="navy" stroke-width="1" />`,
-  );
+  // unit cell boundaries for all tiles
+  if (tilePositions && tilePositions.length > 0) {
+    // すべてのタイル位置にunit cellの境界線を描画
+    for (const { i, j } of tilePositions) {
+      const cellUv: PolygonUV = [
+        { u: i, v: j },
+        { u: i + 1, v: j },
+        { u: i + 1, v: j + 1 },
+        { u: i, v: j + 1 },
+      ];
+      const cellWorld = polygonUvToWorldPoints(cellUv, uvToWorld);
+      debugPaths.push(
+        `<path d="${pointsToPathD(
+          cellWorld,
+        )}" fill="none" stroke="navy" stroke-width="1" />`,
+      );
+    }
+  } else {
+    // fallback: origin cell only
+    const cellUv: PolygonUV = [
+      { u: 0, v: 0 },
+      { u: 1, v: 0 },
+      { u: 1, v: 1 },
+      { u: 0, v: 1 },
+    ];
+    const cellWorld = polygonUvToWorldPoints(cellUv, uvToWorld);
+    debugPaths.push(
+      `<path d="${pointsToPathD(
+        cellWorld,
+      )}" fill="none" stroke="navy" stroke-width="1" />`,
+    );
+  }
 
   return debugPaths;
 }
@@ -67,6 +104,7 @@ export function renderSvg(
   debugData?: {
     regionUv?: PolygonUV;
     uvToWorld: Mat2D;
+    tilePositions?: { i: number; j: number }[];
   },
 ): string {
   const { viewBox, orbitElements, motifSvg } = scene;

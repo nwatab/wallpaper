@@ -75,7 +75,11 @@ export function buildOrbitElements(args: {
   viewport: Rect;
   pose: Pose;
   options?: BuildOrbitElementsOptions;
-}): { orbitElements: OrbitElement[]; uvToWorld: Mat2D } {
+}): {
+  orbitElements: OrbitElement[];
+  uvToWorld: Mat2D;
+  tilePositions: { i: number; j: number }[];
+} {
   const { compiled, viewport, pose } = args;
   const overscan = args.options?.overscanCells ?? 1;
 
@@ -94,9 +98,13 @@ export function buildOrbitElements(args: {
   const jMax = Math.ceil(b.vMax) + overscan;
 
   const orbitElements: OrbitElement[] = [];
+  const tilePositions: { i: number; j: number }[] = [];
 
   for (let i = iMin; i <= iMax; i++) {
     for (let j = jMin; j <= jMax; j++) {
+      // タイル位置を記録
+      tilePositions.push({ i, j });
+
       const tUv = translateUv(i, j); // (u,v)->(u+i,v+j)
 
       for (let opIndex = 0; opIndex < compiled.opsInCell.length; opIndex++) {
@@ -115,5 +123,5 @@ export function buildOrbitElements(args: {
     }
   }
 
-  return { orbitElements, uvToWorld };
+  return { orbitElements, uvToWorld, tilePositions };
 }

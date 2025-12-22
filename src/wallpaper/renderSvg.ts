@@ -24,7 +24,7 @@ export const renderWallpaperSvg = (args: {
     translate: { x: 0, y: 0 },
   };
 
-  const { orbitElements, uvToWorld } = buildOrbitElements({
+  const { orbitElements, uvToWorld, tilePositions } = buildOrbitElements({
     compiled,
     viewport,
     pose,
@@ -46,5 +46,6 @@ export const renderWallpaperSvg = (args: {
   return renderSvg(scene, debug, {
     regionUv: compiled.regionUv,
     uvToWorld,
+    tilePositions,
   });
 };

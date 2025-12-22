@@ -1,15 +1,6 @@
-import type { Rect, UnitTemplate } from './types';
-import { toSvgMatrix } from './affine';
-import { generateInstances, polygonUvToWorldPoints } from './engine';
+import type { Rect, UnitTemplate, Scene, Pose } from './types';
+import { compileUnit, buildInstances, renderSvg } from './engine';
 import { motifs } from './motifs';
-
-const pointsToPathD = (pts: { x: number; y: number }[]): string => {
-  if (pts.length === 0) return '';
-  const [p0, ...rest] = pts;
-  return (
-    `M ${p0.x} ${p0.y} ` + rest.map((p) => `L ${p.x} ${p.y}`).join(' ') + ' Z'
-  );
-};
 
 export const renderWallpaperSvg = (args: {
   template: UnitTemplate;
@@ -23,54 +14,37 @@ export const renderWallpaperSvg = (args: {
     throw new Error(`Unknown motifId: ${template.motifId}`);
   }
 
-  const { instances, uvToWorld } = generateInstances({
-    template,
+  // 1. Compile: 対称性の計算
+  const compiled = compileUnit(template);
+
+  // 2. Tiling: 画面を覆うように並べる計算
+  const pose: Pose = {
+    scale: template.defaultPose?.scale ?? 120,
+    rotationDeg: template.defaultPose?.rotationDeg ?? 0,
+    translate: { x: 0, y: 0 },
+  };
+
+  const { instances, uvToWorld } = buildInstances({
+    compiled,
     viewport,
+    pose,
     options: { overscanCells: 1 },
   });
 
-  // optional debug overlay: unit cell boundary in uv is always the unit square
-  const cellUv = [
-    { u: 0, v: 0 },
-    { u: 1, v: 0 },
-    { u: 1, v: 1 },
-    { u: 0, v: 1 },
-  ];
+  // 3. Render: SVG描画
+  const scene: Scene = {
+    viewBox: {
+      x: viewport.x,
+      y: viewport.y,
+      w: viewport.width,
+      h: viewport.height,
+    },
+    instances,
+    motifSvg: motif,
+  };
 
-  const debugPaths: string[] = [];
-  if (debug) {
-    // region boundary (in the origin cell only)
-    const regionWorld = polygonUvToWorldPoints(template.regionUv, uvToWorld);
-    debugPaths.push(
-      `<path d="${pointsToPathD(
-        regionWorld,
-      )}" fill="none" stroke="magenta" stroke-width="2" />`,
-    );
-
-    // unit cell boundary (in the origin cell only)
-    const cellWorld = polygonUvToWorldPoints(cellUv, uvToWorld);
-    debugPaths.push(
-      `<path d="${pointsToPathD(
-        cellWorld,
-      )}" fill="none" stroke="navy" stroke-width="1" />`,
-    );
-  }
-
-  const groups = instances
-    .map((inst) => `<g transform="${toSvgMatrix(inst.transform)}">${motif}</g>`)
-    .join('\n');
-
-  const svg = `
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}"
-      width="${viewport.width}"
-      height="${viewport.height}"
-    >
-      ${groups}
-      ${debug ? debugPaths.join('\n') : ''}
-    </svg>
-  `.trim();
-
-  return svg;
+  return renderSvg(scene, debug, {
+    regionUv: compiled.regionUv,
+    uvToWorld,
+  });
 };

@@ -58,7 +58,7 @@ export default function RootLayout({
             src="https://www.googletagmanager.com/ns.html?id=GTM-5ZVVQJWM"
             height="0"
             width="0"
-            style={{ display: 'none', visibility: 'hidden' }}
+            className="hidden"
           />
         </noscript>
         {children}

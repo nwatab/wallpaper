@@ -4,3 +4,10 @@ body {
   margin: 0;
   padding: 0;
 }
+
+/* SVGのサイズを強制的に100%へ */
+#wallpaper svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}

@@ -76,71 +76,30 @@ export default function Page() {
   }, []);
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-      }}
-    >
+    <div className="relative w-screen h-screen overflow-hidden">
       {/* 壁紙：全画面（メニューの下に敷く） */}
       <div
         ref={wallRef}
         id="wallpaper"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 0,
-          overflow: 'hidden',
-          // 壁紙は操作しない前提なら、メニュー操作の邪魔をしないようにしておくと堅い
-          pointerEvents: 'none',
-        }}
+        className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
       >
         <div
-          style={{
-            width: '100%',
-            height: '100%',
-            userSelect: 'none',
-          }}
+          className="w-full h-full select-none"
           dangerouslySetInnerHTML={{ __html: svg }}
         />
       </div>
 
       {/* 左メニュー：半透明で上に載せる */}
-      <aside
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 320,
-          zIndex: 10,
-          overflowY: 'auto',
-          padding: 16,
-          borderRight: '1px solid rgba(255,255,255,0.12)',
-          background: 'rgba(0,0,0,0.35)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ fontSize: 14, opacity: 0.9 }}>Wallpaper</div>
+      <aside className="fixed left-0 top-0 bottom-0 w-80 z-10 overflow-y-auto p-4 border-r border-white/12 bg-black/35 backdrop-blur-md">
+        <div className="flex flex-col gap-3">
+          <div className="text-sm opacity-90">Wallpaper</div>
 
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontSize: 12, opacity: 0.8 }}>Template</span>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs opacity-80">Template</span>
             <select
               value={selectedId}
               onChange={(e) => setSelectedId(e.target.value)}
-              style={{
-                height: 36,
-                borderRadius: 8,
-                padding: '0 10px',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.14)',
-                color: 'inherit',
-                outline: 'none',
-              }}
+              className="h-9 rounded-lg px-2.5 bg-white/8 border border-white/14 text-inherit outline-none"
             >
               {templatesByGroup.map(([group, items]) => (
                 <optgroup key={group} label={group}>
@@ -155,42 +114,19 @@ export default function Page() {
           </label>
 
           {/* Advanced Options */}
-          <div
-            style={{
-              marginTop: 8,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.10)',
-              borderRadius: 8,
-            }}
-          >
+          <div className="mt-2 bg-white/6 border border-white/10 rounded-lg">
             <button
               onClick={() =>
                 setAdvancedOptionsExpanded(!advancedOptionsExpanded)
               }
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                width: '100%',
-                padding: 12,
-                background: 'none',
-                border: 'none',
-                borderRadius: advancedOptionsExpanded ? '8px 8px 0 0' : '8px',
-                color: 'inherit',
-                fontSize: 12,
-                cursor: 'pointer',
-                outline: 'none',
-                textAlign: 'left',
-              }}
+              className={`flex items-center gap-2 w-full p-3 bg-transparent border-none text-inherit text-xs cursor-pointer outline-none text-left ${
+                advancedOptionsExpanded ? 'rounded-t-lg' : 'rounded-lg'
+              }`}
             >
               <span
-                style={{
-                  transform: advancedOptionsExpanded
-                    ? 'rotate(90deg)'
-                    : 'rotate(0deg)',
-                  transition: 'transform 0.2s ease',
-                  fontSize: 10,
-                }}
+                className={`text-[10px] transition-transform duration-200 ease-in-out ${
+                  advancedOptionsExpanded ? 'rotate-90' : 'rotate-0'
+                }`}
               >
                 ▶
               </span>
@@ -198,24 +134,8 @@ export default function Page() {
             </button>
 
             {advancedOptionsExpanded && (
-              <div
-                style={{
-                  padding: '0 12px 12px 12px',
-                  borderTop: '1px solid rgba(255,255,255,0.08)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}
-              >
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    fontSize: 12,
-                    opacity: 0.9,
-                  }}
-                >
+              <div className="px-3 pb-3 border-t border-white/8 flex flex-col gap-2">
+                <label className="flex items-center gap-2 text-xs opacity-90">
                   <input
                     type="checkbox"
                     checked={showRegions}
@@ -224,15 +144,7 @@ export default function Page() {
                   Show regions (fundamental domains)
                 </label>
 
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    fontSize: 12,
-                    opacity: 0.9,
-                  }}
-                >
+                <label className="flex items-center gap-2 text-xs opacity-90">
                   <input
                     type="checkbox"
                     checked={showBravaisLattice}
@@ -245,47 +157,26 @@ export default function Page() {
           </div>
 
           {selectedTemplate && (
-            <div
-              style={{
-                marginTop: 8,
-                padding: 12,
-                borderRadius: 12,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.10)',
-                fontSize: 12,
-                lineHeight: 1.5,
-              }}
-            >
-              <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 6 }}>
-                Selected
-              </div>
+            <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 text-xs leading-relaxed">
+              <div className="text-xs opacity-85 mb-1.5">Selected</div>
               <div>
-                <span style={{ opacity: 0.7 }}>group:</span>{' '}
+                <span className="opacity-70">group:</span>{' '}
                 {selectedTemplate.group}
               </div>
               <div>
-                <span style={{ opacity: 0.7 }}>id:</span> {selectedTemplate.id}
+                <span className="opacity-70">id:</span> {selectedTemplate.id}
               </div>
               <div>
-                <span style={{ opacity: 0.7 }}>motif:</span>{' '}
+                <span className="opacity-70">motif:</span>{' '}
                 {selectedTemplate.motifId}
               </div>
-              <div style={{ marginTop: 6, opacity: 0.75 }}>
+              <div className="mt-1.5 opacity-75">
                 viewport: {wallSize.width} × {wallSize.height}
               </div>
             </div>
           )}
         </div>
       </aside>
-
-      {/* SVGのサイズを強制的に100%へ */}
-      <style>{`
-        #wallpaper svg {
-          width: 100% !important;
-          height: 100% !important;
-          display: block;
-        }
-      `}</style>
     </div>
   );
 }

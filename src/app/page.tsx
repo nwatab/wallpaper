@@ -175,6 +175,22 @@ export default function Page() {
               </div>
             </div>
           )}
+
+          {/* GitHub Link */}
+          <div className="mt-auto pt-4">
+            <a
+              href="https://github.com/nwatab/wallpaper"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs opacity-80 hover:opacity-100 transition-opacity duration-200"
+            >
+              <img
+                src="/wallpaper/github-mark.svg"
+                alt="GitHub"
+                className="w-4 h-4 opacity-80"
+              />
+            </a>
+          </div>
         </div>
       </aside>
     </div>

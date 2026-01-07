@@ -88,4 +88,35 @@ export const unitTemplates: UnitTemplate[] = [
     motifId: 'motif-pg-arrow',
     defaultPose: { scale: 120, rotationDeg: 0 },
   },
+  {
+    id: 'cm-seigaiha-equilateral-triangle',
+    group: 'cm',
+    label: 'Seigaiha (cm) – equilateral triangle fundamental region',
+    // 菱形（ブラベー格子）: a と b が同長、なす角 120°
+    // これにより uv の正方形が xy で菱形になる（“傾けています”に対応）
+    basis: {
+      a: { x: 1, y: 0 },
+      b: { x: -0.5, y: Math.sqrt(3) / 2 },
+    },
+
+    // fundamental region: uv三角形 {(0,0),(1,0),(1,1)}
+    // xyでは (0,0),(1,0),(0.5,0.866) の正三角形になる
+    regionUv: [
+      { u: 0, v: 0 },
+      { u: 1, v: 0 },
+      { u: 1, v: 1 },
+    ],
+
+    // セル（uv正方形）を2枚の三角形で埋める：u=v でミラー
+    opsInCellUv: [
+      { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
+      // mirror across u = v : (u,v) -> (v,u)
+      { a: 0, b: 1, c: 1, d: 0, e: 0, f: 0 },
+    ],
+
+    motifId: 'motif-cm-seigaiha',
+
+    // 「簡単のため、傾けています」への寄せ（不要なら0に）
+    defaultPose: { scale: 120, rotationDeg: 210 },
+  },
 ];

@@ -21,10 +21,7 @@ export const unitTemplates: UnitTemplate[] = [
     regionXy: [
       vec2(0, 0),
       vec2(1, 0),
-      vec2(
-        1 + Math.cos((70 * Math.PI) / 180),
-        Math.sin((70 * Math.PI) / 180),
-      ),
+      vec2(1 + Math.cos((70 * Math.PI) / 180), Math.sin((70 * Math.PI) / 180)),
       vec2(Math.cos((70 * Math.PI) / 180), Math.sin((70 * Math.PI) / 180)),
     ],
     opsInCellXy: [
@@ -103,5 +100,23 @@ export const unitTemplates: UnitTemplate[] = [
     ],
     motifId: 'motif-cm-seigaiha',
     defaultPose: { scale: 120, rotationDeg: 210 },
+  },
+
+  // cm: square lattice, houndstooth (千鳥格子)
+  // fundamental region: right-angled isosceles triangle (0,0)-(0,1)-(1,1)
+  // mirror across y=x: (x,y) → (y, x)  [= x+y=1 in y-up math coords]
+  {
+    id: 'cm-houndstooth',
+    group: 'cm',
+    label: 'Houndstooth (千鳥格子)',
+    basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
+    regionXy: [vec2(0, 0), vec2(0, 1), vec2(1, 1)],
+    opsInCellXy: [
+      { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
+      // reflection across y=x: (x,y) → (y, x)
+      { a: 0, b: 1, c: 1, d: 0, e: 0, f: 0 },
+    ],
+    motifId: 'motif-cm-houndstooth',
+    defaultPose: { scale: 120, rotationDeg: 0 },
   },
 ];

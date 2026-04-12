@@ -112,4 +112,16 @@ export const motifs: Record<string, string> = {
     </g>
   </g>
 `,
+
+  // cm群向け: 千鳥格子 (houndstooth)
+  // 基本領域: 直角二等辺三角形 (0,0)-(0,1)-(1,1)、y=x で鏡映 (SVG y-down)
+  // 4つの黒三角形で千鳥格子の「歯」を構成する (y-up設計を y_svg=1-y_math で変換済み)
+  'motif-cm-houndstooth': `
+  <g>
+    <path d="M 0 0.5 L 0.5 0.5 L 0 0 Z" fill="black"/>
+    <path d="M 0.5 0.75 L 0.25 0.5 L 0 0.5 Z" fill="black"/>
+    <path d="M 0.5 1 L 0.5 0.75 L 0 0.5 Z" fill="black"/>
+    <path d="M 0 1 L 0.25 1 L 0 0.75 Z" fill="black"/>
+  </g>
+`,
 };

@@ -42,12 +42,15 @@ SVG string   (src/wallpaper/renderSvg.ts)  ← public API
 
 **Key types** (`src/wallpaper/types.ts`):
 
-- `UnitTemplate` — authored data: lattice `basis` (XY), `regionXy`, `opsInCellXy`, `motifId`
+- `UnitTemplate` — authored data: lattice `basis` (XY), `regionXy`, `opsInCellXy`, `motifId`, optional `defaultPose`
+- `Pose` — user-controlled similarity transform: `{ scale, rotationDeg, translate? }`. Applied as a global transform over the entire tiling (scales and rotates the whole pattern).
 - `CompiledUnit` — the geometric core extracted from a template (basis, ops, region)
 - `OrbitElement` — a single affine transform to apply to the motif SVG
 - `Affine2D` — SVG `matrix(a b c d e f)` convention
 
 **Coordinate system**: Everything is in XY (Euclidean) space. Lattice coordinates (i,j) are used only internally in the tiling step to enumerate cells — the lattice translation for cell (i,j) is simply the vector `i·a + j·b` in XY.
+
+**User input: scale and rotation** (`src/app/page.tsx`): The UI exposes two sliders — Scale (20–400) and Rotation (0–359°). These form a `Pose` passed to `renderWallpaperSvg` and ultimately to `buildOrbitElements`, which applies the pose as a similarity transform over the entire lattice. Each `UnitTemplate` may declare a `defaultPose` to set sensible initial values; switching templates resets scale and rotation to that template's defaults (falling back to `DEFAULT_SCALE = 120`, `DEFAULT_ROTATION_DEG = 0`).
 
 **Motifs** (`src/wallpaper/motifs.ts`): a map from `motifId` string → raw SVG string fragment, drawn in XY coordinates matching the fundamental region.
 

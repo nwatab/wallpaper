@@ -5,6 +5,8 @@ import { motifs } from './motifs';
 export const renderWallpaperSvg = (args: {
   template: UnitTemplate;
   viewport: Rect;
+  scale: number;
+  rotationDeg: number;
   debugOptions?: DebugOptions;
 }): string => {
   const { template, viewport, debugOptions } = args;
@@ -19,8 +21,8 @@ export const renderWallpaperSvg = (args: {
 
   // 2. Tiling: cover viewport with orbit elements
   const pose: Pose = {
-    scale: template.defaultPose?.scale ?? 120,
-    rotationDeg: template.defaultPose?.rotationDeg ?? 0,
+    scale: args.scale,
+    rotationDeg: args.rotationDeg,
     translate: { x: 0, y: 0 },
   };
 

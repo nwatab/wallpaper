@@ -4,6 +4,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { unitTemplates } from '@/wallpaper/unitTemplates';
 import { renderWallpaperSvg } from '@/wallpaper/renderSvg';
 
+const DEFAULT_SCALE = 120;
+const DEFAULT_ROTATION_DEG = 0;
+
 type Size = { width: number; height: number };
 
 function useElementSize<T extends HTMLElement>(): [React.RefObject<T>, Size] {
@@ -36,11 +39,24 @@ export default function Page() {
   const [showRegions, setShowRegions] = useState(false);
   const [showBravaisLattice, setShowBravaisLattice] = useState(false);
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
+  const [scale, setScale] = useState(
+    unitTemplates[0]?.defaultPose?.scale ?? DEFAULT_SCALE,
+  );
+  const [rotationDeg, setRotationDeg] = useState(
+    unitTemplates[0]?.defaultPose?.rotationDeg ?? DEFAULT_ROTATION_DEG,
+  );
 
   const selectedTemplate = useMemo(() => {
     const t = unitTemplates.find((x) => x.id === selectedId);
     return t ?? unitTemplates[0];
   }, [selectedId]);
+
+  const handleTemplateChange = (id: string) => {
+    const template = unitTemplates.find((t) => t.id === id);
+    setSelectedId(id);
+    setScale(template?.defaultPose?.scale ?? DEFAULT_SCALE);
+    setRotationDeg(template?.defaultPose?.rotationDeg ?? DEFAULT_ROTATION_DEG);
+  };
 
   // 壁紙は「全画面レイヤー」のサイズで計測する
   const [wallRef, wallSize] = useElementSize<HTMLDivElement>();
@@ -52,6 +68,8 @@ export default function Page() {
     return renderWallpaperSvg({
       template: selectedTemplate,
       viewport: { x: 0, y: 0, width: wallSize.width, height: wallSize.height },
+      scale,
+      rotationDeg,
       debugOptions: {
         showRegions,
         showBravaisLattice,
@@ -61,6 +79,8 @@ export default function Page() {
     selectedTemplate,
     wallSize.width,
     wallSize.height,
+    scale,
+    rotationDeg,
     showRegions,
     showBravaisLattice,
   ]);
@@ -98,7 +118,7 @@ export default function Page() {
             <span className="text-xs opacity-80">Template</span>
             <select
               value={selectedId}
-              onChange={(e) => setSelectedId(e.target.value)}
+              onChange={(e) => handleTemplateChange(e.target.value)}
               className="h-9 rounded-lg px-2.5 bg-white/8 border border-white/14 text-inherit outline-none"
             >
               {templatesByGroup.map(([group, items]) => (
@@ -111,6 +131,40 @@ export default function Page() {
                 </optgroup>
               ))}
             </select>
+          </label>
+
+          {/* Scale */}
+          <label className="flex flex-col gap-1.5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs opacity-80">Scale</span>
+              <span className="text-xs opacity-60 tabular-nums">{scale}</span>
+            </div>
+            <input
+              type="range"
+              min={20}
+              max={400}
+              step={1}
+              value={scale}
+              onChange={(e) => setScale(Number(e.target.value))}
+              className="w-full cursor-pointer accent-white"
+            />
+          </label>
+
+          {/* Rotation */}
+          <label className="flex flex-col gap-1.5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs opacity-80">Rotation</span>
+              <span className="text-xs opacity-60 tabular-nums">{rotationDeg}°</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={359}
+              step={1}
+              value={rotationDeg}
+              onChange={(e) => setRotationDeg(Number(e.target.value))}
+              className="w-full cursor-pointer accent-white"
+            />
           </label>
 
           {/* Advanced Options */}

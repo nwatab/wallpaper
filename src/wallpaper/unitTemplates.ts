@@ -108,7 +108,7 @@ export const unitTemplates: UnitTemplate[] = [
   {
     id: 'cm-houndstooth',
     group: 'cm',
-    label: 'Houndstooth (千鳥格子)',
+    label: 'Houndstooth (cm) -- right isosceles triangle fundamental region',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     regionXy: [vec2(0, 0), vec2(0, 1), vec2(1, 1)],
     opsInCellXy: [

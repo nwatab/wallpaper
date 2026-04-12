@@ -18,8 +18,6 @@ export type WallpaperGroup =
   | 'p6m';
 
 export type Vec2 = { x: number; y: number };
-export type UV = { u: number; v: number };
-export type PolygonUV = UV[];
 
 export type Rect = { x: number; y: number; width: number; height: number };
 
@@ -38,16 +36,16 @@ export type UnitTemplate = {
   group: WallpaperGroup;
   label: string;
 
-  // unit cell basis (xy space)
+  // unit cell basis vectors (XY space)
   basis: { a: Vec2; b: Vec2 };
 
-  // fundamental region in uv space
-  regionUv: PolygonUV;
+  // fundamental region vertices (XY space)
+  regionXy: Vec2[];
 
-  // ops that map region -> other copies inside a single cell (uv space)
-  opsInCellUv: Affine2D[];
+  // point group ops mapping the fundamental region within one unit cell (XY space)
+  opsInCellXy: Affine2D[];
 
-  // pre-baked motif drawn in uv space of the fundamental region
+  // motif SVG fragment drawn in the fundamental region's XY space
   motifId: string;
 
   defaultPose?: { scale: number; rotationDeg: number };
@@ -65,13 +63,12 @@ export type DebugOptions = {
   showBravaisLattice: boolean;
 };
 
-// 3層アーキテクチャ用の型定義
-export type Mat2D = Affine2D; // エイリアス（既存のAffine2Dと同じ）
+export type Mat2D = Affine2D;
 
 export type CompiledUnit = {
   basis: { a: Vec2; b: Vec2 };
-  opsInCell: Mat2D[];
-  regionUv?: PolygonUV; // デバッグ用（optional）
+  opsInCellXy: Mat2D[];
+  regionXy: Vec2[];
 };
 
 export type OrbitElement = {

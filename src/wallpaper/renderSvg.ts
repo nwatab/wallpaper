@@ -14,24 +14,24 @@ export const renderWallpaperSvg = (args: {
     throw new Error(`Unknown motifId: ${template.motifId}`);
   }
 
-  // 1. Compile: 対称性の計算
+  // 1. Compile: extract geometric core
   const compiled = compileUnit(template);
 
-  // 2. Tiling: 画面を覆うように並べる計算
+  // 2. Tiling: cover viewport with orbit elements
   const pose: Pose = {
     scale: template.defaultPose?.scale ?? 120,
     rotationDeg: template.defaultPose?.rotationDeg ?? 0,
     translate: { x: 0, y: 0 },
   };
 
-  const { orbitElements, uvToWorld, tilePositions } = buildOrbitElements({
+  const { orbitElements, poseMatrix, tilePositions } = buildOrbitElements({
     compiled,
     viewport,
     pose,
     options: { overscanCells: 1 },
   });
 
-  // 3. Render: SVG描画
+  // 3. Render: SVG output
   const scene: Scene = {
     viewBox: {
       x: viewport.x,
@@ -44,8 +44,9 @@ export const renderWallpaperSvg = (args: {
   };
 
   return renderSvg(scene, debugOptions, {
-    regionUv: compiled.regionUv,
-    uvToWorld,
+    regionXy: compiled.regionXy,
+    basis: compiled.basis,
+    poseMatrix,
     tilePositions,
   });
 };

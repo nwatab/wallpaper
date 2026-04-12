@@ -1,4 +1,4 @@
-import type { Affine2D, Vec2, UV } from './types';
+import type { Affine2D, Vec2 } from './types';
 
 export const identity = (): Affine2D => ({
   a: 1,
@@ -27,11 +27,6 @@ export const applyToPoint = (m: Affine2D, p: Vec2): Vec2 => ({
   y: m.b * p.x + m.d * p.y + m.f,
 });
 
-export const applyToUv = (m: Affine2D, p: UV): UV => ({
-  u: m.a * p.u + m.c * p.v + m.e,
-  v: m.b * p.u + m.d * p.v + m.f,
-});
-
 export const invert = (m: Affine2D): Affine2D => {
   const det = m.a * m.d - m.b * m.c;
   if (Math.abs(det) < 1e-12) {
@@ -47,15 +42,6 @@ export const invert = (m: Affine2D): Affine2D => {
     f: (m.b * m.e - m.a * m.f) * invDet,
   };
 };
-
-export const translateUv = (du: number, dv: number): Affine2D => ({
-  a: 1,
-  b: 0,
-  c: 0,
-  d: 1,
-  e: du,
-  f: dv,
-});
 
 export const translateXy = (dx: number, dy: number): Affine2D => ({
   a: 1,

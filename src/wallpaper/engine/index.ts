@@ -1,16 +1,14 @@
-// 新しい3層アーキテクチャのメインエクスポート
-
-// Compile層: 対称性の計算
+// Compile: extract geometric core from template
 export { compileUnit } from './compile';
 
-// Tiling層: 画面を覆うように並べる計算
+// Tiling: cover the viewport with orbit elements
 export { buildOrbitElements } from './tiling';
 export type { BuildOrbitElementsOptions } from './tiling';
 
-// Render層: バックエンド依存の描画
-export { renderSvg, createDebugPaths, polygonUvToWorldPoints } from './render';
+// Render: SVG output
+export { renderSvg, createDebugPaths } from './render';
 
-// 共通型定義
+// Types
 export type {
   CompiledUnit,
   OrbitElement,

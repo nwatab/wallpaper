@@ -1,7 +1,11 @@
-import { UnitTemplate } from './types';
+import { UnitTemplate, Vec2 } from './types';
+
+const S3_2 = Math.sqrt(3) / 2; // sin(60°) = √3/2
+
+const vec2 = (x: number, y: number): Vec2 => ({ x, y });
 
 export const unitTemplates: UnitTemplate[] = [
-  // p1: 一般平行四辺形（例として1つ）
+  // p1: oblique lattice, fundamental region = full unit cell
   {
     id: 'p1-parallelogram-70deg',
     group: 'p1',
@@ -13,110 +17,91 @@ export const unitTemplates: UnitTemplate[] = [
         y: Math.sin((70 * Math.PI) / 180),
       },
     },
-    regionUv: [
-      { u: 0, v: 0 },
-      { u: 1, v: 0 },
-      { u: 1, v: 1 },
-      { u: 0, v: 1 },
+    // full parallelogram: origin, a, a+b, b
+    regionXy: [
+      vec2(0, 0),
+      vec2(1, 0),
+      vec2(
+        1 + Math.cos((70 * Math.PI) / 180),
+        Math.sin((70 * Math.PI) / 180),
+      ),
+      vec2(Math.cos((70 * Math.PI) / 180), Math.sin((70 * Math.PI) / 180)),
     ],
-    opsInCellUv: [
+    opsInCellXy: [
       { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
     ],
     motifId: 'motif-a',
     defaultPose: { scale: 120, rotationDeg: 0 },
   },
 
-  // p2: hexagonal の unit cell（60°菱形）を2つの正三角形に分ける例
+  // p2: hexagonal lattice, fundamental region = triangle, 180° rotation
   {
     id: 'p2-hex-equilateral-triangle',
     group: 'p2',
     label: 'Equilateral triangle on hex lattice',
-    basis: { a: { x: 1, y: 0 }, b: { x: 0.5, y: Math.sqrt(3) / 2 } },
-    regionUv: [
-      { u: 0, v: 0 },
-      { u: 1, v: 0 },
-      { u: 0, v: 1 },
-    ],
-    opsInCellUv: [
+    basis: { a: { x: 1, y: 0 }, b: { x: 0.5, y: S3_2 } },
+    // triangle: origin, a, b
+    regionXy: [vec2(0, 0), vec2(1, 0), vec2(0.5, S3_2)],
+    opsInCellXy: [
       { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
-      // 180°回転（セル中心まわり）をuvで表す： (u,v)->(1-u,1-v)
-      { a: -1, b: 0, c: 0, d: -1, e: 1, f: 1 },
+      // 180° rotation about cell center (a+b)/2 = (0.75, √3/4)
+      { a: -1, b: 0, c: 0, d: -1, e: 1.5, f: S3_2 },
     ],
     motifId: 'motif-b',
     defaultPose: { scale: 120, rotationDeg: 0 },
   },
 
-  // pm: rectangular lattice with parallel mirror lines
+  // pm: rectangular lattice, fundamental region = left half, vertical mirror
   {
     id: 'pm-rectangular-vertical-mirrors',
     group: 'pm',
     label: 'Rectangular with vertical mirrors',
-    basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } }, // rectangular lattice
-    regionUv: [
-      { u: 0, v: 0 },
-      { u: 0.5, v: 0 }, // fundamental region is half the unit cell
-      { u: 0.5, v: 1 },
-      { u: 0, v: 1 },
-    ],
-    opsInCellUv: [
+    basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
+    regionXy: [vec2(0, 0), vec2(0.5, 0), vec2(0.5, 1), vec2(0, 1)],
+    opsInCellXy: [
       { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
-      // vertical reflection across u = 0.5: (u,v) -> (1-u,v)
+      // reflection across x = 0.5: (x,y) -> (1-x, y)
       { a: -1, b: 0, c: 0, d: 1, e: 1, f: 0 },
     ],
     motifId: 'motif-pm-leaf',
     defaultPose: { scale: 120, rotationDeg: 0 },
   },
 
-  // pg: rectangular lattice with parallel glide reflections
+  // pg: rectangular lattice, fundamental region = top half, horizontal glide
   {
     id: 'pg-rectangular-horizontal-glides',
     group: 'pg',
     label: 'Rectangular with horizontal glide reflections',
-    basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } }, // rectangular lattice
-    regionUv: [
-      { u: 0, v: 0 },
-      { u: 1, v: 0 },
-      { u: 1, v: 0.5 }, // fundamental region is half the unit cell (horizontal)
-      { u: 0, v: 0.5 },
-    ],
-    opsInCellUv: [
+    basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
+    regionXy: [vec2(0, 0), vec2(1, 0), vec2(1, 0.5), vec2(0, 0.5)],
+    opsInCellXy: [
       { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
-      // glide reflection: reflect across v = 0.5 and translate by (0.5, 0)
-      // (u,v) -> (u + 0.5, 1 - v)
+      // glide reflection: reflect across y = 0.5, translate by a/2
+      // (x,y) -> (x + 0.5, 1 - y)
       { a: 1, b: 0, c: 0, d: -1, e: 0.5, f: 1 },
     ],
     motifId: 'motif-pg-arrow',
     defaultPose: { scale: 120, rotationDeg: 0 },
   },
+
+  // cm: rhombic lattice, fundamental region = triangle, mirror across 60° axis
   {
     id: 'cm-seigaiha-equilateral-triangle',
     group: 'cm',
-    label: 'Seigaiha (cm) – equilateral triangle fundamental region',
-    // 菱形（ブラベー格子）: a と b が同長、なす角 120°
-    // これにより uv の正方形が xy で菱形になる（“傾けています”に対応）
+    label: 'Seigaiha (cm) -- equilateral triangle fundamental region',
     basis: {
       a: { x: 1, y: 0 },
-      b: { x: -0.5, y: Math.sqrt(3) / 2 },
+      b: { x: -0.5, y: S3_2 },
     },
-
-    // fundamental region: uv三角形 {(0,0),(1,0),(1,1)}
-    // xyでは (0,0),(1,0),(0.5,0.866) の正三角形になる
-    regionUv: [
-      { u: 0, v: 0 },
-      { u: 1, v: 0 },
-      { u: 1, v: 1 },
-    ],
-
-    // セル（uv正方形）を2枚の三角形で埋める：u=v でミラー
-    opsInCellUv: [
+    // equilateral triangle: origin, a=(1,0), a+b=(0.5, sqrt(3)/2)
+    regionXy: [vec2(0, 0), vec2(1, 0), vec2(0.5, S3_2)],
+    opsInCellXy: [
       { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
-      // mirror across u = v : (u,v) -> (v,u)
-      { a: 0, b: 1, c: 1, d: 0, e: 0, f: 0 },
+      // reflection across line through origin at 60deg (direction of a+b)
+      // R = [[cos120, sin120], [sin120, -cos120]] = [[-0.5, sqrt(3)/2], [sqrt(3)/2, 0.5]]
+      { a: -0.5, b: S3_2, c: S3_2, d: 0.5, e: 0, f: 0 },
     ],
-
     motifId: 'motif-cm-seigaiha',
-
-    // 「簡単のため、傾けています」への寄せ（不要なら0に）
     defaultPose: { scale: 120, rotationDeg: 210 },
   },
 ];

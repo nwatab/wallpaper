@@ -24,20 +24,6 @@ export function createDebugPaths(args: {
 
   const tiles = tilePositions ?? [{ i: 0, j: 0 }];
 
-  if (debugOptions.showRegions && regionXy) {
-    for (const { i, j } of tiles) {
-      // Translate region by lattice vector i·a + j·b, then apply pose
-      const dx = i * basis.a.x + j * basis.b.x;
-      const dy = i * basis.a.y + j * basis.b.y;
-      const regionWorld = regionXy.map((p) =>
-        applyToPoint(poseMatrix, { x: p.x + dx, y: p.y + dy }),
-      );
-      debugPaths.push(
-        `<path d="${pointsToPathD(regionWorld)}" fill="none" stroke="magenta" stroke-width="2" />`,
-      );
-    }
-  }
-
   if (debugOptions.showBravaisLattice) {
     const { a, b: bv } = basis;
     for (const { i, j } of tiles) {
@@ -53,7 +39,21 @@ export function createDebugPaths(args: {
       ];
       const cellWorld = corners.map((p) => applyToPoint(poseMatrix, p));
       debugPaths.push(
-        `<path d="${pointsToPathD(cellWorld)}" fill="none" stroke="navy" stroke-width="1" />`,
+        `<path d="${pointsToPathD(cellWorld)}" fill="none" stroke="navy" stroke-width="4" />`,
+      );
+    }
+  }
+
+  if (debugOptions.showRegions && regionXy) {
+    for (const { i, j } of tiles) {
+      // Translate region by lattice vector i·a + j·b, then apply pose
+      const dx = i * basis.a.x + j * basis.b.x;
+      const dy = i * basis.a.y + j * basis.b.y;
+      const regionWorld = regionXy.map((p) =>
+        applyToPoint(poseMatrix, { x: p.x + dx, y: p.y + dy }),
+      );
+      debugPaths.push(
+        `<path d="${pointsToPathD(regionWorld)}" fill="none" stroke="magenta" stroke-width="1" />`,
       );
     }
   }

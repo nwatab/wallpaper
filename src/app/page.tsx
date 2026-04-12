@@ -159,8 +159,8 @@ export default function Page() {
             <input
               type="range"
               min={0}
-              max={359}
-              step={1}
+              max={345}
+              step={15}
               value={rotationDeg}
               onChange={(e) => setRotationDeg(Number(e.target.value))}
               className="w-full cursor-pointer accent-white"

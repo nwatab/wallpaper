@@ -113,6 +113,23 @@ export const motifs: Record<string, string> = {
   </g>
 `,
 
+  // pmm群向け: 基本領域 [0,0.5]x[0,0.5] 内のモチーフ
+  // 2方向の反射で(0.5,0.5)を中心とした4弁の花模様が生まれる
+  'motif-pmm-petal': `
+  <g>
+    <!-- Petal from lattice point (0,0) to cell centre (0.5,0.5),
+         symmetric about the y=x diagonal.
+         When reflected by the 4 pmm ops, four petals converge at each
+         cell centre and four petal tips meet at each lattice point. -->
+    <path d="M 0 0 Q 0.4 0.1 0.5 0.5 Q 0.1 0.4 0 0 Z"
+          fill="#88aaee" stroke="#224488" stroke-width="0.015"/>
+    <!-- Accent circle at cell centre (shared by all 4 copies) -->
+    <circle cx="0.5" cy="0.5" r="0.06" fill="#cc4422"/>
+    <!-- Accent circle at lattice point (shared between neighbouring cells) -->
+    <circle cx="0" cy="0" r="0.04" fill="#224488"/>
+  </g>
+`,
+
   // cm群向け: 千鳥格子 (houndstooth)
   // 基本領域: 直角二等辺三角形 (0,0)-(0,1)-(1,1)、y=x で鏡映 (SVG y-down)
   // 4つの黒三角形で千鳥格子の「歯」を構成する (y-up設計を y_svg=1-y_math で変換済み)

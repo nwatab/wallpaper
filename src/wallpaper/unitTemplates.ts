@@ -102,6 +102,28 @@ export const unitTemplates: UnitTemplate[] = [
     defaultPose: { scale: 120, rotationDeg: 210 },
   },
 
+  // pmm: rectangular lattice, fundamental region = quarter cell [0,0.5]x[0,0.5]
+  // Point group D2: identity + reflect x=0.5 + reflect y=0.5 + 180° rotation about (0.5,0.5)
+  {
+    id: 'pmm-rectangular',
+    group: 'pmm',
+    label: 'Rectangular (pmm) -- two perpendicular mirrors',
+    basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
+    // quarter cell: top-left quadrant in SVG coords
+    regionXy: [vec2(0, 0), vec2(0.5, 0), vec2(0.5, 0.5), vec2(0, 0.5)],
+    opsInCellXy: [
+      { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
+      // reflection across x = 0.5: (x,y) → (1-x, y)
+      { a: -1, b: 0, c: 0, d: 1, e: 1, f: 0 },
+      // reflection across y = 0.5: (x,y) → (x, 1-y)
+      { a: 1, b: 0, c: 0, d: -1, e: 0, f: 1 },
+      // 180° rotation about (0.5, 0.5): (x,y) → (1-x, 1-y)
+      { a: -1, b: 0, c: 0, d: -1, e: 1, f: 1 },
+    ],
+    motifId: 'motif-pmm-petal',
+    defaultPose: { scale: 120, rotationDeg: 0 },
+  },
+
   // cm: square lattice, houndstooth (千鳥格子)
   // fundamental region: right-angled isosceles triangle (0,0)-(0,1)-(1,1)
   // mirror across y=x: (x,y) → (y, x)  [= x+y=1 in y-up math coords]

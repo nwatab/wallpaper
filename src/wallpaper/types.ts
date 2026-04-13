@@ -49,6 +49,12 @@ export type UnitTemplate = {
   motifId: string;
 
   defaultPose?: { scale: number; rotationDeg: number };
+
+  /**
+   * When true, each cell's orbit elements are clipped to its unit cell boundary.
+   * Required when any opsInCellXy maps the fundamental region outside [0,1]^2.
+   */
+  clipToCells?: boolean;
 };
 
 export type Pose = {
@@ -73,10 +79,13 @@ export type CompiledUnit = {
 
 export type OrbitElement = {
   transform: Mat2D;
+  cellPos: { i: number; j: number };
 };
 
 export type Scene = {
   viewBox: { x: number; y: number; w: number; h: number };
   orbitElements: OrbitElement[];
   motifSvg: string;
+  /** If provided, each cell's orbit elements are clipped to its unit cell parallelogram. */
+  cellToWorld?: Affine2D;
 };

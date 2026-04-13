@@ -74,13 +74,60 @@ export function renderSvg(
     tilePositions?: { i: number; j: number }[];
   },
 ): string {
-  const { viewBox, orbitElements, motifSvg } = scene;
+  const { viewBox, orbitElements, motifSvg, cellToWorld } = scene;
 
-  const groups = orbitElements
-    .map(
-      (inst) => `<g transform="${toSvgMatrix(inst.transform)}">${motifSvg}</g>`,
-    )
-    .join('\n');
+  let groups: string;
+
+  if (cellToWorld) {
+    // Group orbit elements by cell and clip each cell to its unit cell parallelogram.
+    const cellMap = new Map<string, typeof orbitElements>();
+    for (const el of orbitElements) {
+      const key = `${el.cellPos.i}:${el.cellPos.j}`;
+      const arr = cellMap.get(key);
+      if (arr) arr.push(el);
+      else cellMap.set(key, [el]);
+    }
+
+    const defs: string[] = [];
+    const clippedGroups: string[] = [];
+    let clipIdx = 0;
+
+    for (const [key, els] of cellMap) {
+      const [iStr, jStr] = key.split(':');
+      const i = +iStr;
+      const j = +jStr;
+      const clipId = `_cc${clipIdx++}`;
+
+      const pts = [
+        applyToPoint(cellToWorld, { x: i, y: j }),
+        applyToPoint(cellToWorld, { x: i + 1, y: j }),
+        applyToPoint(cellToWorld, { x: i + 1, y: j + 1 }),
+        applyToPoint(cellToWorld, { x: i, y: j + 1 }),
+      ]
+        .map((p) => `${p.x},${p.y}`)
+        .join(' ');
+
+      defs.push(
+        `<clipPath id="${clipId}"><polygon points="${pts}"/></clipPath>`,
+      );
+
+      const inner = els
+        .map(
+          (el) => `<g transform="${toSvgMatrix(el.transform)}">${motifSvg}</g>`,
+        )
+        .join('\n');
+      clippedGroups.push(`<g clip-path="url(#${clipId})">${inner}</g>`);
+    }
+
+    groups = `<defs>${defs.join('')}</defs>\n${clippedGroups.join('\n')}`;
+  } else {
+    groups = orbitElements
+      .map(
+        (inst) =>
+          `<g transform="${toSvgMatrix(inst.transform)}">${motifSvg}</g>`,
+      )
+      .join('\n');
+  }
 
   let debugPaths: string[] = [];
   if (

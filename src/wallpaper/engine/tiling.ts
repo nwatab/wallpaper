@@ -113,8 +113,11 @@ export function buildOrbitElements(args: {
       for (const op of opsInCellXy) {
         // transform = pose ∘ latticeTranslation ∘ symmetryOp ∘ basis
         // basisMatrix maps motif UV coords → XY before ops are applied
-        const transform = compose(poseM, compose(latticeT, compose(op, basisMatrix)));
-        orbitElements.push({ transform });
+        const transform = compose(
+          poseM,
+          compose(latticeT, compose(op, basisMatrix)),
+        );
+        orbitElements.push({ transform, cellPos: { i, j } });
       }
     }
   }

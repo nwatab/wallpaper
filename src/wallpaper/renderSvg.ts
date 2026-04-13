@@ -8,6 +8,7 @@ export const renderWallpaperSvg = (args: {
   scale: number;
   rotationDeg: number;
   debugOptions?: DebugOptions;
+  clipToCells?: boolean;
 }): string => {
   const { template, viewport, debugOptions } = args;
 
@@ -26,12 +27,13 @@ export const renderWallpaperSvg = (args: {
     translate: { x: 0, y: 0 },
   };
 
-  const { orbitElements, poseMatrix, tilePositions } = buildOrbitElements({
-    compiled,
-    viewport,
-    pose,
-    options: { overscanCells: 1 },
-  });
+  const { orbitElements, cellToWorld, poseMatrix, tilePositions } =
+    buildOrbitElements({
+      compiled,
+      viewport,
+      pose,
+      options: { overscanCells: 1 },
+    });
 
   // 3. Render: SVG output
   const scene: Scene = {
@@ -43,6 +45,8 @@ export const renderWallpaperSvg = (args: {
     },
     orbitElements,
     motifSvg: motif,
+    cellToWorld:
+      (args.clipToCells ?? template.clipToCells) ? cellToWorld : undefined,
   };
 
   return renderSvg(scene, debugOptions, {

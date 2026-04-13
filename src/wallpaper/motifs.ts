@@ -152,6 +152,31 @@ export const motifs: Record<string, string> = {
 </g>
 `,
 
+  // pgg群向け: 基本領域 [0,0.5]x[0,0.5] 内のモチーフ
+  // ⌟ コーナーブラケット形。純粋な鏡映なし — 4種類すべてのコーナー向きが回転・グライドで出現する。
+  //
+  // 4つのオペレーションがユニットセルをタイルする様子:
+  //
+  //   Op1 (identity)   |  Op3 (horiz glide)     ⌟  |  ⌜
+  //   ────────────────────────────────────     ──────────
+  //   Op4 (vert glide) |  Op2 (rot 180°)        ⌞  |  ⌐
+  //
+  // 隣接するどの象限も純粋な鏡像ではなく、pmgとの違いが明確にわかる。
+  // pgg motif: drawn inside the right-angled isosceles triangle
+  // SVG coords: right angle at (0.5,1), vertices at (1,0.5) and (0,0.5)
+  // Interior: y ≥ 0.5, (y-0.5) ≤ x ≤ (1.5-y)
+  // Angle bracket at the right-angle vertex, with arms of unequal length for asymmetry.
+  'motif-pgg': `
+<g>
+  <!-- arm along left edge of triangle (toward (0,0.5)) -->
+  <line x1="0.48" y1="0.88" x2="0.13" y2="0.61" stroke="#1a1a2e" stroke-width="0.04" stroke-linecap="round"/>
+  <!-- shorter arm along right edge (toward (1,0.5)) — unequal length breaks symmetry -->
+  <line x1="0.48" y1="0.88" x2="0.72" y2="0.66" stroke="#1a1a2e" stroke-width="0.04" stroke-linecap="round"/>
+  <!-- accent dot near hypotenuse, off-centre, breaks any remaining bilateral symmetry -->
+  <circle cx="0.62" cy="0.54" r="0.03" fill="#cc4422"/>
+</g>
+`,
+
   // cm群向け: 千鳥格子 (houndstooth)
   // 基本領域: 直角二等辺三角形 (0,0)-(0,1)-(1,1)、y=x で鏡映 (SVG y-down)
   // 4つの黒三角形で千鳥格子の「歯」を構成する (y-up設計を y_svg=1-y_math で変換済み)

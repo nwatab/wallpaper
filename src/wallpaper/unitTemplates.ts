@@ -158,6 +158,43 @@ export const unitTemplates: UnitTemplate[] = [
     defaultPose: { scale: 120, rotationDeg: 0 },
   },
 
+  // pgg: rectangular lattice, fundamental region = right-angled isosceles triangle
+  //
+  // In y-up coords: apex (right angle) at (1/2,0), other vertices at (1,1/2) and (0,1/2).
+  // In SVG (y-down):  apex at (1/2,1), vertices at (1,1/2) and (0,1/2).
+  //
+  // The four ops and where they place the triangle (SVG coords, clipped to [0,1]²):
+  //
+  //   Op1 identity          → centre-bottom diamond half  {(1/2,1),(1,1/2),(0,1/2)}
+  //   Op2 horiz glide y=3/4 → bottom-right corner (cell 0,0) / bottom-left (cell -1,0)
+  //   Op3 rot 180° (1/2,1/2)→ centre-top    diamond half  {(1/2,0),(0,1/2),(1,1/2)}
+  //   Op4 vert glide x=1/4  → top-left corner (cell 0,0)   / top-right  (cell +1,0)
+  //
+  // Ops extend outside [0,1]²; clipToCells is required.
+  {
+    id: 'pgg-rectangular',
+    group: 'pgg',
+    label:
+      'Rectangular (pgg) -- glide reflections in both directions, no mirrors',
+    basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
+    // right-angled isosceles triangle: right angle at (1/2,1) in SVG (= y_up apex (1/2,0))
+    regionXy: [vec2(0.5, 1), vec2(1, 0.5), vec2(0, 0.5)],
+    opsInCellXy: [
+      { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
+      // horizontal glide: reflect across y_svg=3/4 (y_up=1/4), translate x by +1/2
+      // (x,y) → (x+1/2, 3/2-y)
+      { a: 1, b: 0, c: 0, d: -1, e: 0.5, f: 1.5 },
+      // 180° rotation about (1/2, 1/2): (x,y) → (1-x, 1-y)
+      { a: -1, b: 0, c: 0, d: -1, e: 1, f: 1 },
+      // vertical glide = rot ∘ horiz-glide: reflect across x=1/4, translate y by -1/2
+      // (x,y) → (1/2-x, y-1/2)
+      { a: -1, b: 0, c: 0, d: 1, e: 0.5, f: -0.5 },
+    ],
+    clipToCells: true,
+    motifId: 'motif-pgg',
+    defaultPose: { scale: 120, rotationDeg: 0 },
+  },
+
   // cm: square lattice, houndstooth (千鳥格子)
   // fundamental region: right-angled isosceles triangle (0,0)-(0,1)-(1,1)
   // mirror across y=x: (x,y) → (y, x)  [= x+y=1 in y-up math coords]

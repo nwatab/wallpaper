@@ -124,6 +124,40 @@ export const unitTemplates: UnitTemplate[] = [
     defaultPose: { scale: 120, rotationDeg: 0 },
   },
 
+  // pmg: rectangular lattice, fundamental region = quarter cell [0,0.5]x[0,0.5]
+  // Point group D2: reflections in x only (vertical mirrors at x=0 and x=0.5),
+  // glide reflections in y direction (horizontal glide axes at y=0 and y=0.5 with vector (0.5,0)),
+  // and two 2-fold rotation centres on the glide axes.
+  //
+  // The four ops tile the unit cell as follows (F = fundamental region):
+  //
+  //   Op1 (identity)  |  Op2 (mirror x=0.5)      ⌐  |  ¬
+  //   ─────────────────────────────────────     ──────────
+  //   Op4 (rot 180°)  |  Op3 (glide)             ┐  |  ┌
+  //
+  // Op1 and Op2 are a mirror pair (vertical axis).
+  // Op3 and Op4 are the glide-reflected row: horizontally offset by 0.5
+  // relative to a pure horizontal reflection, so no horizontal mirror exists.
+  {
+    id: 'pmg-rectangular-vertical-mirrors',
+    group: 'pmg',
+    label: 'Rectangular (pmg) -- vertical mirrors, horizontal glides',
+    basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
+    // quarter cell: upper-left quadrant [0,0.5]x[0,0.5]
+    regionXy: [vec2(0, 0), vec2(0.5, 0), vec2(0.5, 0.5), vec2(0, 0.5)],
+    opsInCellXy: [
+      { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }, // identity
+      // reflection across x=0.5: (x,y) → (1-x, y)
+      { a: -1, b: 0, c: 0, d: 1, e: 1, f: 0 },
+      // glide: reflect across y=0.5, translate x by +0.5: (x,y) → (x+0.5, 1-y)
+      { a: 1, b: 0, c: 0, d: -1, e: 0.5, f: 1 },
+      // 180° rotation about (0.25, 0.5): (x,y) → (0.5-x, 1-y)
+      { a: -1, b: 0, c: 0, d: -1, e: 0.5, f: 1 },
+    ],
+    motifId: 'motif-pmg',
+    defaultPose: { scale: 120, rotationDeg: 0 },
+  },
+
   // cm: square lattice, houndstooth (千鳥格子)
   // fundamental region: right-angled isosceles triangle (0,0)-(0,1)-(1,1)
   // mirror across y=x: (x,y) → (y, x)  [= x+y=1 in y-up math coords]

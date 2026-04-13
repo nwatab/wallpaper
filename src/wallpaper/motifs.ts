@@ -130,6 +130,28 @@ export const motifs: Record<string, string> = {
   </g>
 `,
 
+  // pmg群向け: 基本領域 [0,0.5]x[0,0.5] 内のモチーフ
+  // L字ブラケット形。垂直鏡映 (x=0.5) と水平グライド (y=0.5, 平行移動 0.5) の組み合わせを示す。
+  //
+  // 4つのオペレーションがユニットセルをタイルする様子:
+  //
+  //   Op1 (identity)  |  Op2 (mirror x=0.5)      ⌐  |  ¬
+  //   ─────────────────────────────────────     ──────────
+  //   Op4 (rot 180°)  |  Op3 (glide)             ┐  |  ┌
+  //
+  // アクセントドット (0.12, 0.41) は y 対称性を破り、グライドと純粋な水平鏡映の違いを可視化する。
+  'motif-pmg': `
+<g>
+  <!-- L-bracket in fundamental region [0,0.5]x[0,0.5] -->
+  <!-- horizontal top bar -->
+  <line x1="0.07" y1="0.12" x2="0.43" y2="0.12" stroke="#1a1a2e" stroke-width="0.04" stroke-linecap="round"/>
+  <!-- vertical bar at right end going down -->
+  <line x1="0.43" y1="0.12" x2="0.43" y2="0.33" stroke="#1a1a2e" stroke-width="0.04" stroke-linecap="round"/>
+  <!-- accent dot near bottom-left: breaks y-symmetry, marks orientation -->
+  <circle cx="0.12" cy="0.41" r="0.03" fill="#cc4422"/>
+</g>
+`,
+
   // cm群向け: 千鳥格子 (houndstooth)
   // 基本領域: 直角二等辺三角形 (0,0)-(0,1)-(1,1)、y=x で鏡映 (SVG y-down)
   // 4つの黒三角形で千鳥格子の「歯」を構成する (y-up設計を y_svg=1-y_math で変換済み)

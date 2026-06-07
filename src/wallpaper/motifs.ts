@@ -188,4 +188,22 @@ export const motifs: Record<string, string> = {
     <path d="M 0 1 L 0.25 1 L 0 0.75 Z" fill="black"/>
   </g>
 `,
+
+  // ENGINE TEST GLYPH — a chiral "F" with an off-centre accent dot. Has no rotational
+  // or mirror symmetry, so reflections render as a mirrored F and glides as an
+  // offset-and-mirrored F. Drawn in uv ⊂ [0.1,0.4]² so it fits inside every
+  // fundamental region (half-cell, quarter-cell, and the triangular ones).
+  // Use the test-* templates to eyeball that each group's ops have the right handedness.
+  'motif-test-glyph': `
+  <g>
+    <!-- vertical stem -->
+    <rect x="0.13" y="0.10" width="0.05" height="0.30" fill="#1a1a2e"/>
+    <!-- top arm (long) -->
+    <rect x="0.13" y="0.10" width="0.24" height="0.05" fill="#1a1a2e"/>
+    <!-- middle arm (shorter) -->
+    <rect x="0.13" y="0.21" width="0.16" height="0.05" fill="#1a1a2e"/>
+    <!-- accent dot, bottom-right of the glyph: marks orientation, breaks symmetry -->
+    <circle cx="0.34" cy="0.36" r="0.03" fill="#cc4422"/>
+  </g>
+`,
 };

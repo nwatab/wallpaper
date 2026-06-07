@@ -1,58 +1,33 @@
-import type { Rect, UnitTemplate, Scene, Pose, DebugOptions } from './types';
-import { compileUnit, buildOrbitElements, renderSvg } from './engine';
-import { motifs } from './motifs';
+import type { Rect, UnitTemplate, Pose, DebugOptions } from './types';
+import { createSvgRenderer } from './render/svgRenderer';
 
+export type { PatternRenderer, RenderInput } from './render/PatternRenderer';
+export { createSvgRenderer } from './render/svgRenderer';
+
+// Default backend. Stateless, so a single shared instance is fine.
+const svgRenderer = createSvgRenderer();
+
+/**
+ * Public API: render a wallpaper template into a viewport as an SVG string.
+ * Thin wrapper over the SVG PatternRenderer backend (scale/rotation → Pose).
+ */
 export const renderWallpaperSvg = (args: {
   template: UnitTemplate;
   viewport: Rect;
   scale: number;
   rotationDeg: number;
   debugOptions?: DebugOptions;
-  clipToCells?: boolean;
 }): string => {
-  const { template, viewport, debugOptions } = args;
-
-  const motif = motifs[template.motifId];
-  if (!motif) {
-    throw new Error(`Unknown motifId: ${template.motifId}`);
-  }
-
-  // 1. Compile: extract geometric core
-  const compiled = compileUnit(template);
-
-  // 2. Tiling: cover viewport with orbit elements
   const pose: Pose = {
     scale: args.scale,
     rotationDeg: args.rotationDeg,
     translate: { x: 0, y: 0 },
   };
 
-  const { orbitElements, cellToWorld, poseMatrix, tilePositions } =
-    buildOrbitElements({
-      compiled,
-      viewport,
-      pose,
-      options: { overscanCells: 1 },
-    });
-
-  // 3. Render: SVG output
-  const scene: Scene = {
-    viewBox: {
-      x: viewport.x,
-      y: viewport.y,
-      w: viewport.width,
-      h: viewport.height,
-    },
-    orbitElements,
-    motifSvg: motif,
-    cellToWorld:
-      (args.clipToCells ?? template.clipToCells) ? cellToWorld : undefined,
-  };
-
-  return renderSvg(scene, debugOptions, {
-    regionXy: compiled.regionXy,
-    basis: compiled.basis,
-    poseMatrix,
-    tilePositions,
+  return svgRenderer.render({
+    template: args.template,
+    viewport: args.viewport,
+    pose,
+    debugOptions: args.debugOptions,
   });
 };

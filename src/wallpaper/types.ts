@@ -31,8 +31,18 @@ export type Affine2D = {
   f: number;
 };
 
+// A wallpaper group as swappable data: the coset representatives of the translation
+// lattice (= point group elements), expressed in the unit cell's fractional
+// (lattice-basis) coordinates. Conjugating these by a template's basis yields the
+// XY ops the engine applies. See src/wallpaper/groups.ts.
+export type WallpaperGroupDef = {
+  name: WallpaperGroup;
+  cosetReps: Affine2D[];
+};
+
 export type UnitTemplate = {
   id: string;
+  // Key into the group registry (groups.ts). Supplies the symmetry ops.
   group: WallpaperGroup;
   label: string;
 
@@ -42,19 +52,10 @@ export type UnitTemplate = {
   // fundamental region vertices (XY space)
   regionXy: Vec2[];
 
-  // point group ops mapping the fundamental region within one unit cell (XY space)
-  opsInCellXy: Affine2D[];
-
-  // motif SVG fragment drawn in the fundamental region's XY space
+  // motif SVG fragment drawn in the fundamental region's uv (fractional) space
   motifId: string;
 
   defaultPose?: { scale: number; rotationDeg: number };
-
-  /**
-   * When true, each cell's orbit elements are clipped to its unit cell boundary.
-   * Required when any opsInCellXy maps the fundamental region outside [0,1]^2.
-   */
-  clipToCells?: boolean;
 };
 
 export type Pose = {
@@ -86,6 +87,4 @@ export type Scene = {
   viewBox: { x: number; y: number; w: number; h: number };
   orbitElements: OrbitElement[];
   motifSvg: string;
-  /** If provided, each cell's orbit elements are clipped to its unit cell parallelogram. */
-  cellToWorld?: Affine2D;
 };

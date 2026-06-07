@@ -14,17 +14,8 @@ import {
   scaleUniform,
   translateXy,
   applyToPoint,
+  basisToMatrix,
 } from '../affine';
-
-// Basis vectors → matrix that maps lattice coords (i,j) to XY
-const basisToMatrix = (basis: { a: Vec2; b: Vec2 }): Affine2D => ({
-  a: basis.a.x,
-  b: basis.a.y,
-  c: basis.b.x,
-  d: basis.b.y,
-  e: 0,
-  f: 0,
-});
 
 const poseToMatrix = (pose: Pose): Affine2D => {
   const t = pose.translate

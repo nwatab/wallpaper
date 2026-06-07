@@ -51,6 +51,22 @@ export default function Page() {
     return t ?? unitTemplates[0];
   }, [selectedId]);
 
+  // Gallery swatches: a small fixed-pose render per template. Templates are static,
+  // so compute once. Scale is small so each swatch shows the pattern repeating.
+  const swatchSvgs = useMemo(() => {
+    const size = 120;
+    const map: Record<string, string> = {};
+    for (const t of unitTemplates) {
+      map[t.id] = renderWallpaperSvg({
+        template: t,
+        viewport: { x: 0, y: 0, width: size, height: size },
+        scale: 30,
+        rotationDeg: t.defaultPose?.rotationDeg ?? 0,
+      });
+    }
+    return map;
+  }, []);
+
   const handleTemplateChange = (id: string) => {
     const template = unitTemplates.find((t) => t.id === id);
     setSelectedId(id);
@@ -114,24 +130,41 @@ export default function Page() {
         <div className="flex flex-col gap-3">
           <div className="text-sm opacity-90">Wallpaper</div>
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs opacity-80">Template</span>
-            <select
-              value={selectedId}
-              onChange={(e) => handleTemplateChange(e.target.value)}
-              className="h-9 rounded-lg px-2.5 bg-white/8 border border-white/14 text-inherit outline-none"
-            >
-              {templatesByGroup.map(([group, items]) => (
-                <optgroup key={group} label={group}>
-                  {items.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
+          {/* Gallery: visual preset picker (grouped by wallpaper group) */}
+          <div className="flex flex-col gap-2">
+            <span className="text-xs opacity-80">Gallery</span>
+            {templatesByGroup.map(([group, items]) => (
+              <div key={group} className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-wide opacity-50">
+                  {group}
+                </span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {items.map((t) => {
+                    const active = t.id === selectedId;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => handleTemplateChange(t.id)}
+                        title={t.label}
+                        aria-pressed={active}
+                        className={`group relative aspect-square overflow-hidden rounded-md bg-white transition-shadow ${
+                          active
+                            ? 'ring-2 ring-white'
+                            : 'ring-1 ring-white/15 hover:ring-white/40'
+                        }`}
+                      >
+                        <div
+                          className="absolute inset-0 [&>svg]:h-full [&>svg]:w-full"
+                          dangerouslySetInnerHTML={{ __html: swatchSvgs[t.id] }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
 
           {/* Scale */}
           <label className="flex flex-col gap-1.5">

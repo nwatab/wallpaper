@@ -67,6 +67,25 @@ export const rotateDeg = (deg: number): Affine2D => {
   const s = Math.sin(r);
   return { a: c, b: s, c: -s, d: c, e: 0, f: 0 };
 };
+// Basis vectors → matrix mapping unit-cell fractional coords (u,v) to XY:
+// (u,v) ↦ u·a + v·b.
+export const basisToMatrix = (basis: { a: Vec2; b: Vec2 }): Affine2D => ({
+  a: basis.a.x,
+  b: basis.a.y,
+  c: basis.b.x,
+  d: basis.b.y,
+  e: 0,
+  f: 0,
+});
+
+// Conjugate a fractional-frame op by a basis to get the equivalent XY op:
+// opXY = B ∘ opFrac ∘ B⁻¹.
+export const conjugateByBasis = (
+  basisMatrix: Affine2D,
+  opFrac: Affine2D,
+): Affine2D =>
+  compose(basisMatrix, compose(opFrac, invert(basisMatrix)));
+
 export type Polygon = Vec2[];
 
 export const applyToPolygon = (m: Affine2D, poly: Polygon): Polygon =>

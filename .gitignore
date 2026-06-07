@@ -34,3 +34,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# generated visual snapshots (pnpm test regenerates them)
+__snapshots__/

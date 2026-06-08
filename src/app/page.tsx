@@ -37,6 +37,7 @@ function useElementSize<T extends HTMLElement>(): [React.RefObject<T>, Size] {
 export default function Page() {
   const [selectedId, setSelectedId] = useState(unitTemplates[0]?.id ?? '');
   const [showRegions, setShowRegions] = useState(false);
+  const [showOrbit, setShowOrbit] = useState(false);
   const [showBravaisLattice, setShowBravaisLattice] = useState(false);
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
   const [scale, setScale] = useState(
@@ -88,6 +89,7 @@ export default function Page() {
       rotationDeg,
       debugOptions: {
         showRegions,
+        showOrbit,
         showBravaisLattice,
       },
     });
@@ -98,6 +100,7 @@ export default function Page() {
     scale,
     rotationDeg,
     showRegions,
+    showOrbit,
     showBravaisLattice,
   ]);
 
@@ -228,7 +231,16 @@ export default function Page() {
                     checked={showRegions}
                     onChange={(e) => setShowRegions(e.target.checked)}
                   />
-                  Show regions (fundamental domains)
+                  Show region (pink, 1 per cell)
+                </label>
+
+                <label className="flex items-center gap-2 text-xs opacity-90">
+                  <input
+                    type="checkbox"
+                    checked={showOrbit}
+                    onChange={(e) => setShowOrbit(e.target.checked)}
+                  />
+                  Show orbit (gray, all domains)
                 </label>
 
                 <label className="flex items-center gap-2 text-xs opacity-90">

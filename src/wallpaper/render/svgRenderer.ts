@@ -18,7 +18,14 @@ export const createSvgRenderer = (): PatternRenderer<string> => ({
       throw new Error(`Unknown motifId: ${template.motifId}`);
     }
 
-    const { orbitElements, poseMatrix, tilePositions, regionXy, basis } = tile({
+    const {
+      orbitElements,
+      poseMatrix,
+      tilePositions,
+      regionXy,
+      opsInCellXy,
+      basis,
+    } = tile({
       template,
       viewport,
       pose,
@@ -37,6 +44,7 @@ export const createSvgRenderer = (): PatternRenderer<string> => ({
 
     return renderSvg(scene, debugOptions, {
       regionXy,
+      opsInCellXy,
       basis,
       poseMatrix,
       tilePositions,

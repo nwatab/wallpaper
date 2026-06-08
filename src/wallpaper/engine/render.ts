@@ -1,5 +1,5 @@
-import type { Scene, Affine2D, Vec2 } from '../types';
-import { toSvgMatrix, applyToPoint } from '../affine';
+import type { Scene, Affine2D, Vec2, DebugOptions } from '../types';
+import { toSvgMatrix, applyToPoint, compose, translateXy } from '../affine';
 
 const pointsToPathD = (pts: Vec2[]): string => {
   if (pts.length === 0) return '';
@@ -14,12 +14,14 @@ const pointsToPathD = (pts: Vec2[]): string => {
  */
 export function createDebugPaths(args: {
   regionXy?: Vec2[];
+  opsInCellXy?: Affine2D[];
   basis: { a: Vec2; b: Vec2 };
   poseMatrix: Affine2D;
   tilePositions?: { i: number; j: number }[];
-  debugOptions: { showRegions: boolean; showBravaisLattice: boolean };
+  debugOptions: DebugOptions;
 }): string[] {
-  const { regionXy, basis, poseMatrix, tilePositions, debugOptions } = args;
+  const { regionXy, opsInCellXy, basis, poseMatrix, tilePositions, debugOptions } =
+    args;
   const debugPaths: string[] = [];
 
   const tiles = tilePositions ?? [{ i: 0, j: 0 }];
@@ -44,17 +46,40 @@ export function createDebugPaths(args: {
     }
   }
 
-  if (debugOptions.showRegions && regionXy) {
-    for (const { i, j } of tiles) {
-      // Translate region by lattice vector i·a + j·b, then apply pose
-      const dx = i * basis.a.x + j * basis.b.x;
-      const dy = i * basis.a.y + j * basis.b.y;
-      const regionWorld = regionXy.map((p) =>
-        applyToPoint(poseMatrix, { x: p.x + dx, y: p.y + dy }),
-      );
-      debugPaths.push(
-        `<path d="${pointsToPathD(regionWorld)}" fill="none" stroke="magenta" stroke-width="1" />`,
-      );
+  // Fundamental-region overlays. Both stamp the region through the same transform
+  // path as the motif, minus the UV→XY basis adapter since regionXy is already in XY.
+  //   showOrbit  → faint gray: the full orbit (cosetReps × lattice) partitioning the plane.
+  //   showRegions → pink: one representative region per cell (the identity copy).
+  // Gray is drawn first so pink sits on top.
+  if ((debugOptions.showOrbit || debugOptions.showRegions) && regionXy) {
+    const latticeTs = tiles.map(({ i, j }) =>
+      translateXy(
+        i * basis.a.x + j * basis.b.x,
+        i * basis.a.y + j * basis.b.y,
+      ),
+    );
+
+    if (debugOptions.showOrbit && opsInCellXy) {
+      for (const latticeT of latticeTs) {
+        for (const op of opsInCellXy) {
+          // world = pose ∘ latticeTranslation ∘ symmetryOp  (regionXy is XY)
+          const m = compose(poseMatrix, compose(latticeT, op));
+          const regionWorld = regionXy.map((p) => applyToPoint(m, p));
+          debugPaths.push(
+            `<path d="${pointsToPathD(regionWorld)}" fill="none" stroke="gray" stroke-width="0.5" stroke-opacity="0.4" />`,
+          );
+        }
+      }
+    }
+
+    if (debugOptions.showRegions) {
+      for (const latticeT of latticeTs) {
+        const m = compose(poseMatrix, latticeT);
+        const regionWorld = regionXy.map((p) => applyToPoint(m, p));
+        debugPaths.push(
+          `<path d="${pointsToPathD(regionWorld)}" fill="none" stroke="magenta" stroke-width="1" />`,
+        );
+      }
     }
   }
 
@@ -66,15 +91,18 @@ export function createDebugPaths(args: {
  */
 export function renderSvg(
   scene: Scene,
-  debugOptions?: { showRegions: boolean; showBravaisLattice: boolean },
+  debugOptions?: DebugOptions,
   debugData?: {
     regionXy?: Vec2[];
+    opsInCellXy?: Affine2D[];
     basis: { a: Vec2; b: Vec2 };
     poseMatrix: Affine2D;
     tilePositions?: { i: number; j: number }[];
   },
 ): string {
   const { viewBox, orbitElements, motifSvg } = scene;
+  const hasOverlay = (o: DebugOptions): boolean =>
+    o.showRegions || o.showOrbit || o.showBravaisLattice;
 
   // Every orbit element is stamped at its true position (cosetReps × lattice). No
   // per-cell clipping — clipping would erase copies that origin-based ops place
@@ -84,11 +112,7 @@ export function renderSvg(
     .join('\n');
 
   let debugPaths: string[] = [];
-  if (
-    debugOptions &&
-    debugData &&
-    (debugOptions.showRegions || debugOptions.showBravaisLattice)
-  ) {
+  if (debugOptions && debugData && hasOverlay(debugOptions)) {
     debugPaths = createDebugPaths({ ...debugData, debugOptions });
   }
 
@@ -100,12 +124,7 @@ export function renderSvg(
       height="${viewBox.h}"
     >
       ${groups}
-      ${
-        debugOptions &&
-        (debugOptions.showRegions || debugOptions.showBravaisLattice)
-          ? debugPaths.join('\n')
-          : ''
-      }
+      ${debugOptions && hasOverlay(debugOptions) ? debugPaths.join('\n') : ''}
     </svg>
   `.trim();
 

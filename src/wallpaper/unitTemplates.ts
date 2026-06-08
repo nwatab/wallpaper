@@ -159,13 +159,13 @@ const coverageSpecs: { group: WallpaperGroup; basis: { a: Vec2; b: Vec2 } }[] = 
 ];
 
 const coverageTemplates: UnitTemplate[] = coverageSpecs.map((spec) => ({
-  id: `test-${spec.group}`,
+  id: `gen-${spec.group}`,
   group: spec.group,
-  label: `TEST · ${spec.group}`,
+  label: `Computer-generated · ${spec.group}`,
   basis: spec.basis,
   // Standard asymmetric unit (fractional uv) mapped into XY by the basis.
   regionXy: applyToPolygon(basisToMatrix(spec.basis), asymmetricUnitUv[spec.group]),
-  motifId: 'motif-test-glyph',
+  motifId: 'motif-gen-glyph',
   // The test glyph spills past tight regions (e.g. p4g's {4,2,2} triangle); clip each
   // copy to its region so the overlap-driven flicker disappears and each region shows
   // exactly one glyph fragment in its correct orientation.
@@ -176,8 +176,9 @@ const coverageTemplates: UnitTemplate[] = coverageSpecs.map((spec) => ({
 // Gallery: Persian / Chinese / porcelain geometric designs that FILL their fundamental
 // region (motifs in galleryMotifs.ts). Each uses the standard asymmetric unit + canonical
 // basis, so the symmetry/region tests pass by construction; the motif is free art inside
-// the region. ids are `test-`-prefixed (the completeness-pin exemption) because they also
-// serve as the fixtures the maximality test checks — the user sees `label`, not the id.
+// the region. ids are `gen-`-prefixed (the completeness-pin exemption marks them as
+// computer-generated) because they also serve as the fixtures the maximality test checks —
+// the user sees `label`, not the id.
 //   motifLayer 'clip' → each copy is trimmed to its region, so motif art may overhang.
 const gallerySpecs: {
   id: string;
@@ -186,15 +187,15 @@ const gallerySpecs: {
   motifId: string;
   basis: { a: Vec2; b: Vec2 };
 }[] = [
-  { id: 'test-p4m-girih', group: 'p4m', label: 'Girih star & cross', motifId: 'p4m-girih-star', basis: SQUARE },
-  { id: 'test-p4-cracked-ice', group: 'p4', label: 'Cracked-ice lattice', motifId: 'p4-cracked-ice', basis: SQUARE },
-  { id: 'test-p6m-shamsa', group: 'p6m', label: 'Shamsa rosette', motifId: 'p6m-shamsa', basis: HEX120 },
-  { id: 'test-pmm-leiwen', group: 'pmm', label: 'Cloud-meander key fret', motifId: 'pmm-leiwen', basis: SQUARE },
-  { id: 'test-p6-whirl', group: 'p6', label: 'Whirling-blade rosette', motifId: 'p6-whirl', basis: HEX120 },
-  { id: 'test-cmm-quatrefoil', group: 'cmm', label: 'Talavera quatrefoil interlace', motifId: 'cmm-quatrefoil', basis: RHOMBIC },
-  { id: 'test-p4g-pinwheel', group: 'p4g', label: 'Pinwheel pavement', motifId: 'p4g-pinwheel', basis: SQUARE },
-  { id: 'test-p3-trefoil', group: 'p3', label: 'Seljuk trefoil knot', motifId: 'p3-trefoil-knot', basis: HEX120 },
-  { id: 'test-p31m-medallion', group: 'p31m', label: 'Three-petal medallion', motifId: 'p31m-medallion', basis: HEX120 },
+  { id: 'gen-p4m-girih', group: 'p4m', label: 'Girih star & cross', motifId: 'p4m-girih-star', basis: SQUARE },
+  { id: 'gen-p4-cracked-ice', group: 'p4', label: 'Cracked-ice lattice', motifId: 'p4-cracked-ice', basis: SQUARE },
+  { id: 'gen-p6m-shamsa', group: 'p6m', label: 'Shamsa rosette', motifId: 'p6m-shamsa', basis: HEX120 },
+  { id: 'gen-pmm-leiwen', group: 'pmm', label: 'Cloud-meander key fret', motifId: 'pmm-leiwen', basis: SQUARE },
+  { id: 'gen-p6-whirl', group: 'p6', label: 'Whirling-blade rosette', motifId: 'p6-whirl', basis: HEX120 },
+  { id: 'gen-cmm-quatrefoil', group: 'cmm', label: 'Talavera quatrefoil interlace', motifId: 'cmm-quatrefoil', basis: RHOMBIC },
+  { id: 'gen-p4g-pinwheel', group: 'p4g', label: 'Pinwheel pavement', motifId: 'p4g-pinwheel', basis: SQUARE },
+  { id: 'gen-p3-trefoil', group: 'p3', label: 'Seljuk trefoil knot', motifId: 'p3-trefoil-knot', basis: HEX120 },
+  { id: 'gen-p31m-medallion', group: 'p31m', label: 'Three-petal medallion', motifId: 'p31m-medallion', basis: HEX120 },
 ];
 
 const galleryTemplates: UnitTemplate[] = gallerySpecs.map((spec) => ({

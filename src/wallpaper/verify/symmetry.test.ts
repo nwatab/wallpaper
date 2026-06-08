@@ -169,7 +169,7 @@ describe('(4) render-level symmetry from the same tile() the renderer uses', () 
 });
 
 describe('(5) p6 is pure C6 — six rotations, zero reflections', () => {
-  const p6 = compileUnit(unitTemplates.find((t) => t.id === 'test-p6')!);
+  const p6 = compileUnit(unitTemplates.find((t) => t.id === 'gen-p6')!);
 
   it('cosetReps: exactly 6, all orientation-preserving, angles 0/60/120/180/240/300°', () => {
     expect(p6.opsInCellXy).toHaveLength(6);
@@ -185,7 +185,7 @@ describe('(5) p6 is pure C6 — six rotations, zero reflections', () => {
 
   it('render: 6 copies/cell, every drawn copy orientation-preserving, set fixed by all 6 rotations', () => {
     const { orbitElements } = tile({
-      template: unitTemplates.find((t) => t.id === 'test-p6')!,
+      template: unitTemplates.find((t) => t.id === 'gen-p6')!,
       viewport: { x: -3, y: -3, width: 6, height: 6 },
       pose: { scale: 1, rotationDeg: 0, translate: { x: 0, y: 0 } },
     });

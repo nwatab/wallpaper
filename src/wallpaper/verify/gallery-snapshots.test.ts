@@ -8,15 +8,15 @@ import { unitTemplates } from '../unitTemplates';
 // approval of fill + aesthetics. The symmetry/region/maximality suites prove the math;
 // these images are only the fill/look check. (Do NOT judge symmetry by eye.)
 const GALLERY_IDS = [
-  'test-p4m-girih',
-  'test-p4-cracked-ice',
-  'test-p6m-shamsa',
-  'test-pmm-leiwen',
-  'test-p6-whirl',
-  'test-cmm-quatrefoil',
-  'test-p4g-pinwheel',
-  'test-p3-trefoil',
-  'test-p31m-medallion',
+  'gen-p4m-girih',
+  'gen-p4-cracked-ice',
+  'gen-p6m-shamsa',
+  'gen-pmm-leiwen',
+  'gen-p6-whirl',
+  'gen-cmm-quatrefoil',
+  'gen-p4g-pinwheel',
+  'gen-p3-trefoil',
+  'gen-p31m-medallion',
 ] as const;
 
 const OUT_DIR = join(process.cwd(), '__snapshots__', 'gallery');

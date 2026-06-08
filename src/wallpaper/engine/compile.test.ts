@@ -68,10 +68,10 @@ describe('compileUnit derives XY ops matching the original inlined matrices', ()
   }
 
   it('every original design template has a recorded expectation', () => {
-    // Pins the pre-refactor designs. New ids (e.g. test-* glyphs) are exempt.
+    // Pins the pre-refactor designs. Computer-generated ids (gen-* glyphs) are exempt.
     const designIds = unitTemplates
       .map((t) => t.id)
-      .filter((id) => !id.startsWith('test-'));
+      .filter((id) => !id.startsWith('gen-'));
     expect(designIds.sort()).toEqual(Object.keys(expectedOpsById).sort());
   });
 });

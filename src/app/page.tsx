@@ -50,8 +50,9 @@ export default function Page() {
   const [selectedId, setSelectedId] = useState(unitTemplates[0]?.id ?? '');
   const [switchGroup, setSwitchGroup] = useState<string>(firstToggleGroup);
   const [showSymmetryElements, setShowSymmetryElements] = useState(true);
-  const [showRegions, setShowRegions] = useState(false);
-  const [showOrbit, setShowOrbit] = useState(false);
+  const [regionDisplay, setRegionDisplay] = useState<'none' | 'one' | 'all'>(
+    'none',
+  );
   const [showBravaisLattice, setShowBravaisLattice] = useState(false);
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
 
@@ -105,7 +106,11 @@ export default function Page() {
   const svg = useMemo(() => {
     if (wallSize.width <= 0 || wallSize.height <= 0) return '';
     const viewport = { x: 0, y: 0, width: wallSize.width, height: wallSize.height };
-    const debugOptions = { showRegions, showOrbit, showBravaisLattice };
+    const debugOptions = {
+      showRegions: regionDisplay === 'one',
+      showOrbit: regionDisplay === 'all',
+      showBravaisLattice,
+    };
 
     if (mode === 'switch') {
       if (!switchGroup) return '';
@@ -136,8 +141,7 @@ export default function Page() {
     scale,
     rotationDeg,
     showSymmetryElements,
-    showRegions,
-    showOrbit,
+    regionDisplay,
     showBravaisLattice,
   ]);
 
@@ -364,23 +368,29 @@ export default function Page() {
 
             {advancedOptionsExpanded && (
               <div className="px-3 pb-3 border-t border-white/8 flex flex-col gap-2">
-                <label className="flex items-center gap-2 text-xs opacity-90">
-                  <input
-                    type="checkbox"
-                    checked={showRegions}
-                    onChange={(e) => setShowRegions(e.target.checked)}
-                  />
-                  Show region (pink, 1 per cell)
-                </label>
-
-                <label className="flex items-center gap-2 text-xs opacity-90">
-                  <input
-                    type="checkbox"
-                    checked={showOrbit}
-                    onChange={(e) => setShowOrbit(e.target.checked)}
-                  />
-                  Show orbit (gray, all domains)
-                </label>
+                <div className="flex flex-col gap-1.5">
+                  <div className="text-xs opacity-70">Regions (pink)</div>
+                  {(
+                    [
+                      { value: 'none', label: 'None' },
+                      { value: 'one', label: 'One per cell' },
+                      { value: 'all', label: 'All regions' },
+                    ] as const
+                  ).map(({ value, label }) => (
+                    <label
+                      key={value}
+                      className="flex items-center gap-2 text-xs opacity-90"
+                    >
+                      <input
+                        type="radio"
+                        name="regionDisplay"
+                        checked={regionDisplay === value}
+                        onChange={() => setRegionDisplay(value)}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
 
                 <label className="flex items-center gap-2 text-xs opacity-90">
                   <input

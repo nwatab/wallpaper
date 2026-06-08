@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { unitTemplates } from '@/wallpaper/unitTemplates';
 import { renderWallpaperSvg } from '@/wallpaper/renderSvg';
+import { latticeSections } from '@/wallpaper/switch/shapeFamilies';
+import { renderGroupSvg } from '@/wallpaper/switch/renderSwitch';
 
 const DEFAULT_SCALE = 120;
 const DEFAULT_ROTATION_DEG = 0;
@@ -35,11 +37,33 @@ function useElementSize<T extends HTMLElement>(): [React.RefObject<T>, Size] {
 }
 
 export default function Page() {
+  const sections = useMemo(() => latticeSections(), []);
+  // First toggle-set's first member = the default switcher selection (flagship p4m).
+  const firstToggleGroup = useMemo(() => {
+    for (const s of sections)
+      for (const c of s.classes)
+        if (c.kind === 'toggle') return c.set.members[0].group;
+    return '';
+  }, [sections]);
+
+  const [mode, setMode] = useState<'gallery' | 'switch'>('gallery');
   const [selectedId, setSelectedId] = useState(unitTemplates[0]?.id ?? '');
+  const [switchGroup, setSwitchGroup] = useState<string>(firstToggleGroup);
+  const [showSymmetryElements, setShowSymmetryElements] = useState(true);
   const [showRegions, setShowRegions] = useState(false);
   const [showOrbit, setShowOrbit] = useState(false);
   const [showBravaisLattice, setShowBravaisLattice] = useState(false);
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
+
+  // The toggle-set the current group belongs to (if any) — drives the caption.
+  const activeToggle = useMemo(() => {
+    for (const s of sections)
+      for (const c of s.classes)
+        if (c.kind === 'toggle' && c.set.members.some((m) => m.group === switchGroup))
+          return c.set;
+    return undefined;
+  }, [sections, switchGroup]);
+
   const [scale, setScale] = useState(
     unitTemplates[0]?.defaultPose?.scale ?? DEFAULT_SCALE,
   );
@@ -79,26 +103,39 @@ export default function Page() {
   const [wallRef, wallSize] = useElementSize<HTMLDivElement>();
 
   const svg = useMemo(() => {
-    if (!selectedTemplate) return '';
     if (wallSize.width <= 0 || wallSize.height <= 0) return '';
+    const viewport = { x: 0, y: 0, width: wallSize.width, height: wallSize.height };
+    const debugOptions = { showRegions, showOrbit, showBravaisLattice };
 
+    if (mode === 'switch') {
+      if (!switchGroup) return '';
+      return renderGroupSvg({
+        group: switchGroup,
+        viewport,
+        scale,
+        rotationDeg,
+        debugOptions,
+        showSymmetryElements,
+      });
+    }
+
+    if (!selectedTemplate) return '';
     return renderWallpaperSvg({
       template: selectedTemplate,
-      viewport: { x: 0, y: 0, width: wallSize.width, height: wallSize.height },
+      viewport,
       scale,
       rotationDeg,
-      debugOptions: {
-        showRegions,
-        showOrbit,
-        showBravaisLattice,
-      },
+      debugOptions,
     });
   }, [
+    mode,
+    switchGroup,
     selectedTemplate,
     wallSize.width,
     wallSize.height,
     scale,
     rotationDeg,
+    showSymmetryElements,
     showRegions,
     showOrbit,
     showBravaisLattice,
@@ -133,7 +170,100 @@ export default function Page() {
         <div className="flex flex-col gap-3">
           <div className="text-sm opacity-90">Wallpaper</div>
 
+          {/* Mode toggle: browse the gallery, or keep one motif and switch its group */}
+          <div className="grid grid-cols-2 gap-1.5">
+            {(['gallery', 'switch'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                aria-pressed={mode === m}
+                className={`rounded-md px-2 py-1.5 text-xs transition-colors ${
+                  mode === m
+                    ? 'bg-white/90 text-black'
+                    : 'bg-white/10 text-white/80 hover:bg-white/20'
+                }`}
+              >
+                {m === 'gallery' ? 'Gallery' : 'Group switcher'}
+              </button>
+            ))}
+          </div>
+
+          {/* Group switcher: organised by lattice (headed by its maximal group).
+              A congruence class with ≥2 members is a same-tile TOGGLE; singletons
+              are selectable but don't toggle. Shape + motif stay fixed across a toggle. */}
+          {mode === 'switch' && (
+            <div className="flex flex-col gap-3">
+              {sections.map((section) => (
+                <div key={section.lattice} className="flex flex-col gap-1.5">
+                  <span className="text-[10px] uppercase tracking-wide opacity-50">
+                    {section.lattice} · max {section.maximalGroup}
+                  </span>
+                  {section.classes.map((entry, idx) =>
+                    entry.kind === 'toggle' ? (
+                      <div
+                        key={`t${idx}`}
+                        className="rounded-md bg-white/6 ring-1 ring-white/10 p-1.5 flex flex-wrap gap-1.5"
+                      >
+                        {entry.set.members.map((m) => {
+                          const active = m.group === switchGroup;
+                          return (
+                            <button
+                              key={m.group}
+                              type="button"
+                              onClick={() => setSwitchGroup(m.group)}
+                              aria-pressed={active}
+                              title="same tile — switch the group"
+                              className={`rounded px-3 py-1 text-xs font-mono transition-colors ${
+                                active
+                                  ? 'bg-white/90 text-black'
+                                  : 'bg-white/10 text-white/80 hover:bg-white/20'
+                              }`}
+                            >
+                              {m.group}
+                            </button>
+                          );
+                        })}
+                        <span className="self-center text-[9px] opacity-40">↔ toggle</span>
+                      </div>
+                    ) : (
+                      <button
+                        key={entry.group}
+                        type="button"
+                        onClick={() => setSwitchGroup(entry.group)}
+                        aria-pressed={entry.group === switchGroup}
+                        className={`self-start rounded px-3 py-1 text-xs font-mono transition-colors ${
+                          entry.group === switchGroup
+                            ? 'bg-white/90 text-black'
+                            : 'bg-white/10 text-white/70 hover:bg-white/20'
+                        }`}
+                      >
+                        {entry.group}
+                      </button>
+                    ),
+                  )}
+                </div>
+              ))}
+
+              {activeToggle && (
+                <p className="text-[11px] leading-relaxed opacity-75">
+                  {activeToggle.discriminator.caption}
+                </p>
+              )}
+
+              <label className="flex items-center gap-2 text-xs opacity-90">
+                <input
+                  type="checkbox"
+                  checked={showSymmetryElements}
+                  onChange={(e) => setShowSymmetryElements(e.target.checked)}
+                />
+                Show symmetry elements (mirrors / glides / centres)
+              </label>
+            </div>
+          )}
+
           {/* Gallery: visual preset picker (grouped by wallpaper group) */}
+          {mode === 'gallery' && (
           <div className="flex flex-col gap-2">
             <span className="text-xs opacity-80">Gallery</span>
             {templatesByGroup.map(([group, items]) => (
@@ -176,6 +306,7 @@ export default function Page() {
               </div>
             ))}
           </div>
+          )}
 
           {/* Scale */}
           <label className="flex flex-col gap-1.5">
@@ -263,24 +394,40 @@ export default function Page() {
             )}
           </div>
 
-          {selectedTemplate && (
+          {mode === 'switch' ? (
             <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 text-xs leading-relaxed">
-              <div className="text-xs opacity-85 mb-1.5">Selected</div>
+              <div className="text-xs opacity-85 mb-1.5">Switching</div>
               <div>
-                <span className="opacity-70">group:</span>{' '}
-                {selectedTemplate.group}
+                <span className="opacity-70">group:</span> {switchGroup}
               </div>
               <div>
-                <span className="opacity-70">id:</span> {selectedTemplate.id}
-              </div>
-              <div>
-                <span className="opacity-70">motif:</span>{' '}
-                {selectedTemplate.motifId}
+                <span className="opacity-70">mode:</span>{' '}
+                {activeToggle ? `toggle (${activeToggle.discriminator.kind})` : 'singleton'}
               </div>
               <div className="mt-1.5 opacity-75">
                 viewport: {wallSize.width} × {wallSize.height}
               </div>
             </div>
+          ) : (
+            selectedTemplate && (
+              <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 text-xs leading-relaxed">
+                <div className="text-xs opacity-85 mb-1.5">Selected</div>
+                <div>
+                  <span className="opacity-70">group:</span>{' '}
+                  {selectedTemplate.group}
+                </div>
+                <div>
+                  <span className="opacity-70">id:</span> {selectedTemplate.id}
+                </div>
+                <div>
+                  <span className="opacity-70">motif:</span>{' '}
+                  {selectedTemplate.motifId}
+                </div>
+                <div className="mt-1.5 opacity-75">
+                  viewport: {wallSize.width} × {wallSize.height}
+                </div>
+              </div>
+            )
           )}
 
           {/* GitHub Link */}

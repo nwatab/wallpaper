@@ -40,12 +40,13 @@ export const createSvgRenderer = (): PatternRenderer<string> => ({
       },
       orbitElements,
       motifSvg: motif,
+      basis,
+      regionXy,
+      motifLayer: template.motifLayer,
     };
 
     return renderSvg(scene, debugOptions, {
-      regionXy,
       opsInCellXy,
-      basis,
       poseMatrix,
       tilePositions,
     });

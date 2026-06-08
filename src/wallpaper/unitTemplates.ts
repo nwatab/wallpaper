@@ -80,6 +80,8 @@ const designTemplates: UnitTemplate[] = [
     // equilateral triangle: origin, a=(1,0), a+b=(0.5, sqrt(3)/2)
     regionXy: [vec2(0, 0), vec2(1, 0), vec2(0.5, S3_2)],
     motifId: 'motif-cm-seigaiha',
+    // Seigaiha arcs deliberately overflow the region and overlap neighbouring copies.
+    motifLayer: 'overlap',
     defaultPose: { scale: 120, rotationDeg: 210 },
   },
 
@@ -164,6 +166,10 @@ const coverageTemplates: UnitTemplate[] = coverageSpecs.map((spec) => ({
   // Standard asymmetric unit (fractional uv) mapped into XY by the basis.
   regionXy: applyToPolygon(basisToMatrix(spec.basis), asymmetricUnitUv[spec.group]),
   motifId: 'motif-test-glyph',
+  // The test glyph spills past tight regions (e.g. p4g's {4,2,2} triangle); clip each
+  // copy to its region so the overlap-driven flicker disappears and each region shows
+  // exactly one glyph fragment in its correct orientation.
+  motifLayer: 'clip',
   defaultPose: { scale: 120, rotationDeg: 0 },
 }));
 

@@ -5,8 +5,13 @@ export { compileUnit } from './compile';
 export { buildOrbitElements } from './tiling';
 export type { BuildOrbitElementsOptions } from './tiling';
 
-// Render: SVG output
-export { renderSvg, createDebugPaths } from './render';
+// Render: SVG output (layered — motif layer first, overlay layer on top)
+export {
+  renderSvg,
+  renderMotifLayer,
+  renderOverlayLayer,
+  createDebugPaths,
+} from './render';
 
 // Types
 export type {

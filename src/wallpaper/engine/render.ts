@@ -1,5 +1,13 @@
 import type { Scene, Affine2D, Vec2, DebugOptions } from '../types';
-import { toSvgMatrix, applyToPoint, compose, translateXy } from '../affine';
+import {
+  toSvgMatrix,
+  applyToPoint,
+  applyToPolygon,
+  compose,
+  translateXy,
+  invert,
+  basisToMatrix,
+} from '../affine';
 
 const pointsToPathD = (pts: Vec2[]): string => {
   if (pts.length === 0) return '';
@@ -86,35 +94,106 @@ export function createDebugPaths(args: {
   return debugPaths;
 }
 
+// On-screen depth of a copy's motif centre. Pose is already folded into `transform`,
+// so this is the final viewport-space y: larger y (lower on screen) paints last.
+const REGION_CLIP_ID = 'fr-clip';
+const motifCentreDepth = (transform: Affine2D): number =>
+  applyToPoint(transform, { x: 0.5, y: 0.5 }).y;
+
 /**
- * Render a Scene to an SVG string.
+ * MOTIF LAYER — stamp the full tile() orbit (cosetReps × lattice). Every copy is
+ * drawn at its true position; no per-cell clipping that would erase copies thrown
+ * outside their stamp cell by origin-based ops. The `motifLayer` policy chooses how
+ * overlapping copies composite:
+ *   'overlap' → painter's order by on-screen depth, so symmetry-equivalent copies
+ *               always stack identically (seigaiha: back rows first, front rows last).
+ *   'clip'    → clip each copy to its fundamental region (verification glyphs).
+ *   default   → orbit order, as authored.
+ * Returns the layer body plus any <defs> (clip paths) it depends on.
+ */
+export function renderMotifLayer(scene: Scene): { defs: string; body: string } {
+  const { orbitElements, motifSvg, motifLayer, basis, regionXy } = scene;
+
+  if (motifLayer === 'overlap') {
+    const ordered = [...orbitElements].sort(
+      (p, q) => motifCentreDepth(p.transform) - motifCentreDepth(q.transform),
+    );
+    const body = ordered
+      .map((el) => `<g transform="${toSvgMatrix(el.transform)}">${motifSvg}</g>`)
+      .join('\n');
+    return { defs: '', body };
+  }
+
+  if (motifLayer === 'clip') {
+    // The region in motif-local uv space is fixed; each copy's own transform places it,
+    // so a single clipPath (userSpaceOnUse) clips every copy to its own region.
+    const regionUv = applyToPolygon(invert(basisToMatrix(basis)), regionXy);
+    const defs = `<clipPath id="${REGION_CLIP_ID}" clipPathUnits="userSpaceOnUse"><path d="${pointsToPathD(regionUv)}"/></clipPath>`;
+    const body = orbitElements
+      .map(
+        (el) =>
+          `<g clip-path="url(#${REGION_CLIP_ID})" transform="${toSvgMatrix(el.transform)}">${motifSvg}</g>`,
+      )
+      .join('\n');
+    return { defs, body };
+  }
+
+  const body = orbitElements
+    .map((el) => `<g transform="${toSvgMatrix(el.transform)}">${motifSvg}</g>`)
+    .join('\n');
+  return { defs: '', body };
+}
+
+/**
+ * OVERLAY LAYER — the lattice / fundamental-region guides, drawn on top of the whole
+ * motif layer. Thin wrapper over createDebugPaths; returns '' when nothing is enabled.
+ */
+export function renderOverlayLayer(
+  debugOptions: DebugOptions | undefined,
+  overlayData:
+    | {
+        regionXy?: Vec2[];
+        opsInCellXy?: Affine2D[];
+        basis: { a: Vec2; b: Vec2 };
+        poseMatrix: Affine2D;
+        tilePositions?: { i: number; j: number }[];
+      }
+    | undefined,
+): string {
+  const hasOverlay =
+    debugOptions &&
+    (debugOptions.showRegions ||
+      debugOptions.showOrbit ||
+      debugOptions.showBravaisLattice);
+  if (!hasOverlay || !overlayData) return '';
+  return createDebugPaths({ ...overlayData, debugOptions }).join('\n');
+}
+
+/**
+ * Render a Scene to an SVG string by stacking the motif layer, then the overlay layer
+ * on top of it. The two layers are sibling <g data-layer> groups so the overlay (and
+ * its rotation-centre / lattice / region guides) is always composited last.
  */
 export function renderSvg(
   scene: Scene,
   debugOptions?: DebugOptions,
   debugData?: {
-    regionXy?: Vec2[];
     opsInCellXy?: Affine2D[];
-    basis: { a: Vec2; b: Vec2 };
     poseMatrix: Affine2D;
     tilePositions?: { i: number; j: number }[];
   },
 ): string {
-  const { viewBox, orbitElements, motifSvg } = scene;
-  const hasOverlay = (o: DebugOptions): boolean =>
-    o.showRegions || o.showOrbit || o.showBravaisLattice;
+  const { viewBox } = scene;
 
-  // Every orbit element is stamped at its true position (cosetReps × lattice). No
-  // per-cell clipping — clipping would erase copies that origin-based ops place
-  // outside their stamp cell, collapsing rotation groups to a p1-looking pattern.
-  const groups = orbitElements
-    .map((inst) => `<g transform="${toSvgMatrix(inst.transform)}">${motifSvg}</g>`)
-    .join('\n');
-
-  let debugPaths: string[] = [];
-  if (debugOptions && debugData && hasOverlay(debugOptions)) {
-    debugPaths = createDebugPaths({ ...debugData, debugOptions });
-  }
+  const motif = renderMotifLayer(scene);
+  const overlay = renderOverlayLayer(
+    debugOptions,
+    debugData && {
+      ...debugData,
+      basis: scene.basis,
+      regionXy: scene.regionXy,
+    },
+  );
 
   const svg = `
     <svg
@@ -123,8 +202,9 @@ export function renderSvg(
       width="${viewBox.w}"
       height="${viewBox.h}"
     >
-      ${groups}
-      ${debugOptions && hasOverlay(debugOptions) ? debugPaths.join('\n') : ''}
+      ${motif.defs ? `<defs>${motif.defs}</defs>` : ''}
+      <g data-layer="motif">${motif.body}</g>
+      ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
     </svg>
   `.trim();
 

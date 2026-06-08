@@ -55,6 +55,15 @@ export type UnitTemplate = {
   // motif SVG fragment drawn in the fundamental region's uv (fractional) space
   motifId: string;
 
+  // How the motif layer composites this template's orbit copies:
+  //   'clip'    → clip each copy to its fundamental region. For verification glyphs
+  //               that must not spill past the region; prevents the spill-over copies
+  //               of high-order groups (e.g. p4g) from overlapping and flickering.
+  //   'overlap' → copies intentionally overlap (e.g. seigaiha); paint back-to-front
+  //               by on-screen depth so symmetry-equivalent copies always stack alike.
+  //   undefined → stamp in orbit order (design motifs already sized to their region).
+  motifLayer?: 'clip' | 'overlap';
+
   defaultPose?: { scale: number; rotationDeg: number };
 };
 
@@ -91,4 +100,9 @@ export type Scene = {
   viewBox: { x: number; y: number; w: number; h: number };
   orbitElements: OrbitElement[];
   motifSvg: string;
+  // Geometry the motif-layer compositing strategies need (clip region / depth frame).
+  basis: { a: Vec2; b: Vec2 };
+  regionXy: Vec2[];
+  // Compositing policy for the motif layer (see UnitTemplate.motifLayer).
+  motifLayer?: 'clip' | 'overlap';
 };

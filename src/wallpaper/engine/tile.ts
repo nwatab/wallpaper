@@ -19,6 +19,9 @@ export type TileResult = {
   cellToWorld: Affine2D;
   tilePositions: { i: number; j: number }[];
   regionXy: Vec2[];
+  // Point-group ops in XY (the verified cosetReps). The overlay applies these to
+  // regionXy to draw the fundamental-domain orbit through the same path as the motif.
+  opsInCellXy: Affine2D[];
   basis: { a: Vec2; b: Vec2 };
 };
 
@@ -47,6 +50,7 @@ export const tile = (args: {
     cellToWorld,
     tilePositions,
     regionXy: compiled.regionXy,
+    opsInCellXy: compiled.opsInCellXy,
     basis: compiled.basis,
   };
 };

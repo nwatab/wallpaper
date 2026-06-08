@@ -66,7 +66,11 @@ export type Pose = {
 };
 
 export type DebugOptions = {
+  // Pink: one representative fundamental region per lattice cell (the identity copy).
   showRegions: boolean;
+  // Gray: the full fundamental-domain orbit (cosetReps × lattice) — the plane seen
+  // partitioned into fundamental domains.
+  showOrbit: boolean;
   showBravaisLattice: boolean;
 };
 

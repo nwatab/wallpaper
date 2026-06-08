@@ -72,7 +72,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'cm-seigaiha-equilateral-triangle',
     group: 'cm',
-    label: 'Seigaiha (cm) -- equilateral triangle fundamental region',
+    label: 'Seigaiha -- equilateral triangle fundamental region',
     basis: {
       a: { x: 1, y: 0 },
       b: { x: -0.5, y: S3_2 },
@@ -89,7 +89,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'pmm-rectangular',
     group: 'pmm',
-    label: 'Rectangular (pmm) -- two perpendicular mirrors',
+    label: 'Rectangular -- two perpendicular mirrors',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     // quarter cell: top-left quadrant in SVG coords
     regionXy: [vec2(0, 0), vec2(0.5, 0), vec2(0.5, 0.5), vec2(0, 0.5)],
@@ -102,7 +102,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'pmg-rectangular-vertical-mirrors',
     group: 'pmg',
-    label: 'Rectangular (pmg) -- vertical mirrors, horizontal glides',
+    label: 'Rectangular -- vertical mirrors, horizontal glides',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     // quarter cell: upper-left quadrant [0,0.5]x[0,0.5]
     regionXy: [vec2(0, 0), vec2(0.5, 0), vec2(0.5, 0.5), vec2(0, 0.5)],
@@ -116,7 +116,7 @@ const designTemplates: UnitTemplate[] = [
     id: 'pgg-rectangular',
     group: 'pgg',
     label:
-      'Rectangular (pgg) -- glide reflections in both directions, no mirrors',
+      'Rectangular -- glide reflections in both directions, no mirrors',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     // right-angled isosceles triangle: right angle at (1/2,1) in SVG (= y_up apex (1/2,0))
     regionXy: [vec2(0.5, 1), vec2(1, 0.5), vec2(0, 0.5)],
@@ -129,7 +129,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'cm-houndstooth',
     group: 'cm',
-    label: 'Houndstooth (cm) -- right isosceles triangle fundamental region',
+    label: 'Houndstooth -- right isosceles triangle fundamental region',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     regionXy: [vec2(0, 0), vec2(0, 1), vec2(1, 1)],
     motifId: 'motif-cm-houndstooth',
@@ -173,7 +173,43 @@ const coverageTemplates: UnitTemplate[] = coverageSpecs.map((spec) => ({
   defaultPose: { scale: 120, rotationDeg: 0 },
 }));
 
+// Gallery: Persian / Chinese / porcelain geometric designs that FILL their fundamental
+// region (motifs in galleryMotifs.ts). Each uses the standard asymmetric unit + canonical
+// basis, so the symmetry/region tests pass by construction; the motif is free art inside
+// the region. ids are `test-`-prefixed (the completeness-pin exemption) because they also
+// serve as the fixtures the maximality test checks — the user sees `label`, not the id.
+//   motifLayer 'clip' → each copy is trimmed to its region, so motif art may overhang.
+const gallerySpecs: {
+  id: string;
+  group: WallpaperGroup;
+  label: string;
+  motifId: string;
+  basis: { a: Vec2; b: Vec2 };
+}[] = [
+  { id: 'test-p4m-girih', group: 'p4m', label: 'Girih star & cross', motifId: 'p4m-girih-star', basis: SQUARE },
+  { id: 'test-p4-cracked-ice', group: 'p4', label: 'Cracked-ice lattice', motifId: 'p4-cracked-ice', basis: SQUARE },
+  { id: 'test-p6m-shamsa', group: 'p6m', label: 'Shamsa rosette', motifId: 'p6m-shamsa', basis: HEX120 },
+  { id: 'test-pmm-leiwen', group: 'pmm', label: 'Cloud-meander key fret', motifId: 'pmm-leiwen', basis: SQUARE },
+  { id: 'test-p6-whirl', group: 'p6', label: 'Whirling-blade rosette', motifId: 'p6-whirl', basis: HEX120 },
+  { id: 'test-cmm-quatrefoil', group: 'cmm', label: 'Talavera quatrefoil interlace', motifId: 'cmm-quatrefoil', basis: RHOMBIC },
+  { id: 'test-p4g-pinwheel', group: 'p4g', label: 'Pinwheel pavement', motifId: 'p4g-pinwheel', basis: SQUARE },
+  { id: 'test-p3-trefoil', group: 'p3', label: 'Seljuk trefoil knot', motifId: 'p3-trefoil-knot', basis: HEX120 },
+  { id: 'test-p31m-medallion', group: 'p31m', label: 'Three-petal medallion', motifId: 'p31m-medallion', basis: HEX120 },
+];
+
+const galleryTemplates: UnitTemplate[] = gallerySpecs.map((spec) => ({
+  id: spec.id,
+  group: spec.group,
+  label: spec.label,
+  basis: spec.basis,
+  regionXy: applyToPolygon(basisToMatrix(spec.basis), asymmetricUnitUv[spec.group]),
+  motifId: spec.motifId,
+  motifLayer: 'clip',
+  defaultPose: { scale: 120, rotationDeg: 0 },
+}));
+
 export const unitTemplates: UnitTemplate[] = [
   ...designTemplates,
   ...coverageTemplates,
+  ...galleryTemplates,
 ];

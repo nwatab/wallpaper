@@ -145,23 +145,31 @@ export default function Page() {
                   {items.map((t) => {
                     const active = t.id === selectedId;
                     return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => handleTemplateChange(t.id)}
-                        title={t.label}
-                        aria-pressed={active}
-                        className={`group relative aspect-square overflow-hidden rounded-md bg-white transition-shadow ${
-                          active
-                            ? 'ring-2 ring-white'
-                            : 'ring-1 ring-white/15 hover:ring-white/40'
-                        }`}
-                      >
-                        <div
-                          className="absolute inset-0 [&>svg]:h-full [&>svg]:w-full"
-                          dangerouslySetInnerHTML={{ __html: swatchSvgs[t.id] }}
-                        />
-                      </button>
+                      <div key={t.id} className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleTemplateChange(t.id)}
+                          title={t.label}
+                          aria-pressed={active}
+                          className={`group relative aspect-square overflow-hidden rounded-md bg-white transition-shadow ${
+                            active
+                              ? 'ring-2 ring-white'
+                              : 'ring-1 ring-white/15 hover:ring-white/40'
+                          }`}
+                        >
+                          <div
+                            className="absolute inset-0 [&>svg]:h-full [&>svg]:w-full"
+                            dangerouslySetInnerHTML={{ __html: swatchSvgs[t.id] }}
+                          />
+                        </button>
+                        <span
+                          className={`text-[9px] leading-tight text-center break-words transition-opacity ${
+                            active ? 'opacity-100' : 'opacity-60'
+                          }`}
+                        >
+                          {t.label}
+                        </span>
+                      </div>
                     );
                   })}
                 </div>

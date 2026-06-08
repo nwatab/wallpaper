@@ -27,8 +27,8 @@ describe('look-alike snapshots', () => {
 
   for (const group of LOOK_ALIKES) {
     it(`renders ${group}`, () => {
-      const template = unitTemplates.find((t) => t.id === `test-${group}`);
-      expect(template, `template test-${group} missing`).toBeDefined();
+      const template = unitTemplates.find((t) => t.id === `gen-${group}`);
+      expect(template, `template gen-${group} missing`).toBeDefined();
 
       const svg = renderWallpaperSvg({
         template: template!,

@@ -96,9 +96,20 @@ export function createDebugPaths(args: {
 
 // On-screen depth of a copy's motif centre. Pose is already folded into `transform`,
 // so this is the final viewport-space y: larger y (lower on screen) paints last.
-const REGION_CLIP_ID = 'fr-clip';
 const motifCentreDepth = (transform: Affine2D): number =>
   applyToPoint(transform, { x: 0.5, y: 0.5 }).y;
+
+// A deterministic id derived from the clip region's path. Many of these SVGs share one
+// HTML document (the full wallpaper plus a grid of gallery swatches), and duplicate
+// element ids make every `url(#id)` resolve to the FIRST match in document order — so a
+// fixed id would clip every swatch to whichever region happened to render first (blank
+// for non-overlapping regions). Keying the id by region geometry means identical regions
+// safely share one clipPath while distinct regions never collide. Pure (no counter/RNG).
+const djb2 = (s: string): string => {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = (((h << 5) + h) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+};
 
 /**
  * MOTIF LAYER — stamp the full tile() orbit (cosetReps × lattice). Every copy is
@@ -128,11 +139,13 @@ export function renderMotifLayer(scene: Scene): { defs: string; body: string } {
     // The region in motif-local uv space is fixed; each copy's own transform places it,
     // so a single clipPath (userSpaceOnUse) clips every copy to its own region.
     const regionUv = applyToPolygon(invert(basisToMatrix(basis)), regionXy);
-    const defs = `<clipPath id="${REGION_CLIP_ID}" clipPathUnits="userSpaceOnUse"><path d="${pointsToPathD(regionUv)}"/></clipPath>`;
+    const dPath = pointsToPathD(regionUv);
+    const clipId = `fr-clip-${djb2(dPath)}`;
+    const defs = `<clipPath id="${clipId}" clipPathUnits="userSpaceOnUse"><path d="${dPath}"/></clipPath>`;
     const body = orbitElements
       .map(
         (el) =>
-          `<g clip-path="url(#${REGION_CLIP_ID})" transform="${toSvgMatrix(el.transform)}">${motifSvg}</g>`,
+          `<g clip-path="url(#${clipId})" transform="${toSvgMatrix(el.transform)}">${motifSvg}</g>`,
       )
       .join('\n');
     return { defs, body };

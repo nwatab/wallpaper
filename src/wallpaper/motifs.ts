@@ -1,4 +1,11 @@
+import { galleryMotifSvg } from './galleryMotifs';
+
 export const motifs: Record<string, string> = {
+  // Persian / Chinese / porcelain geometric gallery motifs (geometry-driven; see
+  // galleryMotifs.ts). Spread first so the hand-written fixtures below still win on
+  // any id clash.
+  ...galleryMotifSvg,
+
   // cell全体向け（p1の例）
   'motif-a': `
     <g>

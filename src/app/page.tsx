@@ -3,8 +3,21 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { unitTemplates } from '@/wallpaper/unitTemplates';
 import { renderWallpaperSvg } from '@/wallpaper/renderSvg';
-import { latticeSections } from '@/wallpaper/switch/shapeFamilies';
+import type { GalleryMotif } from '@/wallpaper/galleryMotifs';
+import type { WallpaperGroup } from '@/wallpaper/types';
+import {
+  congruentPresets,
+  latticeSections,
+  placedUserMotif,
+  referenceGroupOf,
+  sameDrawingFrame,
+} from '@/wallpaper/switch/shapeFamilies';
 import { renderGroupSvg } from '@/wallpaper/switch/renderSwitch';
+import { detectMaximalGroup } from '@/wallpaper/switch/maximalityReport';
+import DrawPane from './DrawPane';
+
+const hasInk = (m: GalleryMotif): boolean =>
+  (m.fills?.length ?? 0) > 0 || (m.strokes?.length ?? 0) > 0;
 
 const DEFAULT_SCALE = 120;
 const DEFAULT_ROTATION_DEG = 0;
@@ -46,10 +59,28 @@ export default function Page() {
     return '';
   }, [sections]);
 
-  const [mode, setMode] = useState<'gallery' | 'switch'>('gallery');
+  const [mode, setMode] = useState<'gallery' | 'switch' | 'draw'>('gallery');
   const [selectedId, setSelectedId] = useState(unitTemplates[0]?.id ?? '');
   const [switchGroup, setSwitchGroup] = useState<string>(firstToggleGroup);
-  const [showSymmetryElements, setShowSymmetryElements] = useState(true);
+  // The user's drawing (M2), stored in the toggle-set REFERENCE frame so it survives a
+  // toggle. Reset when the draw frame (reference region) changes.
+  const [userMotif, setUserMotif] = useState<GalleryMotif>({});
+  const drawReference = useMemo(
+    () => referenceGroupOf(switchGroup as WallpaperGroup),
+    [switchGroup],
+  );
+
+  // Select a group. Switching WITHIN a toggle set (same drawing frame) keeps the drawing
+  // and preset — they re-map to the new member via the placement isometry (the "draw
+  // once, toggle" payoff). Switching to a different congruence class (a different
+  // reference region) resets the canvas, since the old uv geometry no longer applies.
+  const selectGroup = (group: string) => {
+    if (!sameDrawingFrame(group as WallpaperGroup, switchGroup as WallpaperGroup)) {
+      setUserMotif({});
+    }
+    setSwitchGroup(group);
+  };
+  const [showSymmetryElements, setShowSymmetryElements] = useState(false);
   const [regionDisplay, setRegionDisplay] = useState<'none' | 'one' | 'all'>(
     'none',
   );
@@ -64,6 +95,22 @@ export default function Page() {
           return c.set;
     return undefined;
   }, [sections, switchGroup]);
+
+  // Presets strictly congruent to the current draw frame (M2). Empty ⇒ "draw your own".
+  const presets = useMemo(
+    () => congruentPresets(switchGroup as WallpaperGroup),
+    [switchGroup],
+  );
+
+  // Educational maximality REPORT for the drawing. Off the hot path: userMotif changes
+  // only on commit (not while drafting), so deriving here is cheap and not per-frame.
+  const report = useMemo(() => {
+    if (!hasInk(userMotif)) return undefined;
+    return detectMaximalGroup(
+      placedUserMotif(switchGroup as WallpaperGroup, userMotif),
+      switchGroup as WallpaperGroup,
+    );
+  }, [userMotif, switchGroup]);
 
   const [scale, setScale] = useState(
     unitTemplates[0]?.defaultPose?.scale ?? DEFAULT_SCALE,
@@ -103,14 +150,35 @@ export default function Page() {
   // 壁紙は「全画面レイヤー」のサイズで計測する
   const [wallRef, wallSize] = useElementSize<HTMLDivElement>();
 
-  const svg = useMemo(() => {
-    if (wallSize.width <= 0 || wallSize.height <= 0) return '';
-    const viewport = { x: 0, y: 0, width: wallSize.width, height: wallSize.height };
-    const debugOptions = {
+  // Region (pink) / Bravais-lattice overlays — shared by the wallpaper and the draw pane.
+  const debugOptions = useMemo(
+    () => ({
       showRegions: regionDisplay === 'one',
       showOrbit: regionDisplay === 'all',
       showBravaisLattice,
-    };
+    }),
+    [regionDisplay, showBravaisLattice],
+  );
+
+  const svg = useMemo(() => {
+    if (wallSize.width <= 0 || wallSize.height <= 0) return '';
+    const viewport = { x: 0, y: 0, width: wallSize.width, height: wallSize.height };
+
+    // Draw mode: ONE source of truth. The wallpaper tiles exactly the user's drawing
+    // (userMotif), the same motif the canvas renders — never the renderableByGroup
+    // default. An empty drawing renders blank (no fallback/seed), so both surfaces match.
+    if (mode === 'draw') {
+      if (!switchGroup) return '';
+      return renderGroupSvg({
+        group: switchGroup,
+        viewport,
+        scale,
+        rotationDeg,
+        motif: userMotif,
+        debugOptions,
+        showSymmetryElements,
+      });
+    }
 
     if (mode === 'switch') {
       if (!switchGroup) return '';
@@ -136,13 +204,13 @@ export default function Page() {
     mode,
     switchGroup,
     selectedTemplate,
+    userMotif,
     wallSize.width,
     wallSize.height,
     scale,
     rotationDeg,
     showSymmetryElements,
-    regionDisplay,
-    showBravaisLattice,
+    debugOptions,
   ]);
 
   const templatesByGroup = useMemo(() => {
@@ -174,9 +242,10 @@ export default function Page() {
         <div className="flex flex-col gap-3">
           <div className="text-sm opacity-90">Wallpaper</div>
 
-          {/* Mode toggle: browse the gallery, or keep one motif and switch its group */}
-          <div className="grid grid-cols-2 gap-1.5">
-            {(['gallery', 'switch'] as const).map((m) => (
+          {/* Mode toggle: browse the gallery, keep one motif and switch its group, or
+              draw your own motif and watch it tile under the group. */}
+          <div className="grid grid-cols-3 gap-1.5">
+            {(['gallery', 'switch', 'draw'] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -188,15 +257,16 @@ export default function Page() {
                     : 'bg-white/10 text-white/80 hover:bg-white/20'
                 }`}
               >
-                {m === 'gallery' ? 'Gallery' : 'Group switcher'}
+                {m === 'gallery' ? 'Gallery' : m === 'switch' ? 'Switcher' : 'Draw'}
               </button>
             ))}
           </div>
 
-          {/* Group switcher: organised by lattice (headed by its maximal group).
+          {/* Group switcher / draw: organised by lattice (headed by its maximal group).
               A congruence class with ≥2 members is a same-tile TOGGLE; singletons
-              are selectable but don't toggle. Shape + motif stay fixed across a toggle. */}
-          {mode === 'switch' && (
+              are selectable but don't toggle. Shape + motif stay fixed across a toggle.
+              In draw mode the same picker chooses which group tiles your drawing. */}
+          {(mode === 'switch' || mode === 'draw') && (
             <div className="flex flex-col gap-3">
               {sections.map((section) => (
                 <div key={section.lattice} className="flex flex-col gap-1.5">
@@ -215,7 +285,7 @@ export default function Page() {
                             <button
                               key={m.group}
                               type="button"
-                              onClick={() => setSwitchGroup(m.group)}
+                              onClick={() => selectGroup(m.group)}
                               aria-pressed={active}
                               title="same tile — switch the group"
                               className={`rounded px-3 py-1 text-xs font-mono transition-colors ${
@@ -234,7 +304,7 @@ export default function Page() {
                       <button
                         key={entry.group}
                         type="button"
-                        onClick={() => setSwitchGroup(entry.group)}
+                        onClick={() => selectGroup(entry.group)}
                         aria-pressed={entry.group === switchGroup}
                         className={`self-start rounded px-3 py-1 text-xs font-mono transition-colors ${
                           entry.group === switchGroup
@@ -263,6 +333,56 @@ export default function Page() {
                 />
                 Show symmetry elements (mirrors / glides / centres)
               </label>
+            </div>
+          )}
+
+          {/* Draw mode: choose a preset (strict-congruent only) or draw your own motif
+              in the reference region; it tiles live under the selected group above. */}
+          {mode === 'draw' && (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] uppercase tracking-wide opacity-50">
+                  Start from a preset
+                </span>
+                {presets.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {presets.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setUserMotif(p.motifRef)}
+                        className="rounded px-2 py-1 text-[11px] bg-white/10 text-white/80 hover:bg-white/20"
+                      >
+                        {p.id}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] italic opacity-40">
+                    No presets for this shape — draw your own.
+                  </p>
+                )}
+              </div>
+
+              <DrawPane
+                referenceGroup={drawReference}
+                motif={userMotif}
+                onMotifChange={setUserMotif}
+                showSymmetryElements={showSymmetryElements}
+                debugOptions={debugOptions}
+              />
+
+              {report && (
+                <div
+                  className={`rounded-md p-2 text-[11px] leading-relaxed ring-1 ${
+                    report.isMaximal
+                      ? 'bg-white/6 ring-white/10 opacity-80'
+                      : 'bg-amber-400/10 ring-amber-300/30 text-amber-100'
+                  }`}
+                >
+                  <span className="font-mono">{report.maximal}</span> — {report.caption}
+                </div>
+              )}
             </div>
           )}
 

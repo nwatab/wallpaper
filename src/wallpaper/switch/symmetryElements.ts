@@ -113,15 +113,21 @@ export const renderSymmetryElements = (args: {
   const reach = 2 * (viewBox.w + viewBox.h); // segment half-length; SVG clips to view
 
   // ── Axes (mirror / glide) ──────────────────────────────────────────────────
-  // Classify each cell op once, then lay its axis through every tile.
+  // Classify each translated cell op. The mirror-vs-glide test MUST run on the lattice-
+  // translated op (cellOp), not the bare coset rep: in the centered groups (cm, cmm) the
+  // glide reflections arise as mirror ∘ centering-translation, so the same coset rep
+  // yields a pure mirror at integer offsets and a glide at the centering half-offsets.
+  // Classifying the bare origin op would label every translate a mirror and drop those
+  // glides (the primitive groups pg/pgg/pmg carry the glide as its own coset rep, so they
+  // were unaffected — but cm/cmm silently lost their glide lines).
   const axes: Axis[] = [];
   const seenAxis = new Set<string>();
   for (const op of opsInCellXy) {
     if (!isReflection(op)) continue;
-    const glide = isGlide(op, basis);
     for (const { i, j } of tilePositions) {
       const t = latticeVec(basis, i, j);
       const cellOp = compose(translateXy(t.x, t.y), op);
+      const glide = isGlide(cellOp, basis);
       const { c, dir } = reflectionLine(cellOp);
       const cWorld = applyToPoint(poseMatrix, c);
       const dWorld = applyLinear(poseMatrix, dir);

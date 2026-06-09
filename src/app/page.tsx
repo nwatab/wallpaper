@@ -90,8 +90,11 @@ export default function Page() {
   const [regionDisplay, setRegionDisplay] = useState<'none' | 'one' | 'all'>(
     'none',
   );
-  const [showBravaisLattice, setShowBravaisLattice] = useState(false);
+  const [bravaisDisplay, setBravaisDisplay] = useState<'none' | 'all'>('none');
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
+  // Mobile: the side panel slides off-canvas by default and is toggled by the hamburger.
+  // On md+ it is always visible (the toggle is hidden), so this only affects small screens.
+  const [panelOpen, setPanelOpen] = useState(false);
   // Export options. Background defaults to WHITE (patterns like seigaiha rely on the white
   // showing through); transparent is opt-in. "Include guides" applies to the snapshot only —
   // the tileable export is always the clean canonical pattern.
@@ -166,9 +169,9 @@ export default function Page() {
     () => ({
       showRegions: regionDisplay === 'one',
       showOrbit: regionDisplay === 'all',
-      showBravaisLattice,
+      showBravaisLattice: bravaisDisplay === 'all',
     }),
-    [regionDisplay, showBravaisLattice],
+    [regionDisplay, bravaisDisplay],
   );
 
   const svg = useMemo(() => {
@@ -272,8 +275,24 @@ export default function Page() {
         />
       </div>
 
-      {/* 左メニュー：半透明で上に載せる */}
-      <aside className="fixed left-0 top-0 bottom-0 w-80 z-10 overflow-y-auto p-4 border-r border-white/12 bg-black/35 backdrop-blur-md">
+      {/* Mobile: hamburger to show/hide the side panel (hidden on md+, where the panel is
+          always visible). */}
+      <button
+        type="button"
+        onClick={() => setPanelOpen((v) => !v)}
+        aria-label={panelOpen ? 'Hide panel' : 'Show panel'}
+        aria-expanded={panelOpen}
+        className="md:hidden fixed top-3 right-3 z-20 rounded-md px-3 py-2 text-base leading-none bg-black/55 text-white border border-white/15 backdrop-blur-md"
+      >
+        {panelOpen ? '✕' : '☰'}
+      </button>
+
+      {/* 左メニュー：半透明で上に載せる。モバイルではオフキャンバスにスライド。 */}
+      <aside
+        className={`fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] z-10 overflow-y-auto p-4 border-r border-white/12 bg-black/35 backdrop-blur-md transition-transform duration-200 ease-in-out md:translate-x-0 ${
+          panelOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div className="flex flex-col gap-3">
           <div className="text-sm opacity-90">Wallpaper</div>
 
@@ -524,7 +543,7 @@ export default function Page() {
             {advancedOptionsExpanded && (
               <div className="px-3 pb-3 border-t border-white/8 flex flex-col gap-2">
                 <div className="flex flex-col gap-1.5">
-                  <div className="text-xs opacity-70">Regions (pink)</div>
+                  <div className="text-xs opacity-70">Regions</div>
                   {(
                     [
                       { value: 'none', label: 'None' },
@@ -547,14 +566,30 @@ export default function Page() {
                   ))}
                 </div>
 
-                <label className="flex items-center gap-2 text-xs opacity-90">
-                  <input
-                    type="checkbox"
-                    checked={showBravaisLattice}
-                    onChange={(e) => setShowBravaisLattice(e.target.checked)}
-                  />
-                  Show Bravais lattice (cell boundaries)
-                </label>
+                <div className="flex flex-col gap-1.5">
+                  <div className="text-xs opacity-70">
+                    Bravais lattice (cell boundaries)
+                  </div>
+                  {(
+                    [
+                      { value: 'none', label: 'None' },
+                      { value: 'all', label: 'All bravais lattices' },
+                    ] as const
+                  ).map(({ value, label }) => (
+                    <label
+                      key={value}
+                      className="flex items-center gap-2 text-xs opacity-90"
+                    >
+                      <input
+                        type="radio"
+                        name="bravaisDisplay"
+                        checked={bravaisDisplay === value}
+                        onChange={() => setBravaisDisplay(value)}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
           </div>

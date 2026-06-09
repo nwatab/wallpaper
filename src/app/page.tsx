@@ -14,6 +14,12 @@ import {
 } from '@/wallpaper/switch/shapeFamilies';
 import { renderGroupSvg } from '@/wallpaper/switch/renderSwitch';
 import { detectMaximalGroup } from '@/wallpaper/switch/maximalityReport';
+import {
+  snapshotExportSvg,
+  tileableExportSvg,
+  type ExportState,
+} from '@/wallpaper/export/exportSvg';
+import { downloadSvg } from './downloadSvg';
 import DrawPane from './DrawPane';
 
 const hasInk = (m: GalleryMotif): boolean =>
@@ -86,6 +92,11 @@ export default function Page() {
   );
   const [showBravaisLattice, setShowBravaisLattice] = useState(false);
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
+  // Export options. Background defaults to WHITE (patterns like seigaiha rely on the white
+  // showing through); transparent is opt-in. "Include guides" applies to the snapshot only —
+  // the tileable export is always the clean canonical pattern.
+  const [exportTransparent, setExportTransparent] = useState(false);
+  const [includeGuides, setIncludeGuides] = useState(false);
 
   // The toggle-set the current group belongs to (if any) — drives the caption.
   const activeToggle = useMemo(() => {
@@ -212,6 +223,30 @@ export default function Page() {
     showSymmetryElements,
     debugOptions,
   ]);
+
+  // The group label baked into export filenames (gallery → template's group; otherwise the
+  // switcher/draw group).
+  const exportGroup =
+    mode === 'gallery' ? selectedTemplate?.group ?? 'wallpaper' : switchGroup;
+
+  // One ExportState feeds both download buttons; each button invokes its own pure action
+  // (snapshotExportSvg / tileableExportSvg), so the wiring can't silently swap.
+  const exportState: ExportState = {
+    displaySvg: svg,
+    includeGuides,
+    mode,
+    template: selectedTemplate,
+    group: switchGroup,
+    motif: mode === 'draw' ? userMotif : undefined,
+    background: exportTransparent ? 'transparent' : 'white',
+  };
+  const runExport = (
+    build: (s: ExportState) => string,
+    kind: 'snapshot' | 'tile',
+  ) => {
+    const out = build(exportState);
+    if (out) downloadSvg(out, `wallpaper-${exportGroup}-${mode}-${kind}`);
+  };
 
   const templatesByGroup = useMemo(() => {
     const map = new Map<string, typeof unitTemplates>();
@@ -559,6 +594,43 @@ export default function Page() {
               </div>
             )
           )}
+
+          {/* Export — download the current pattern as a standalone SVG (all modes). */}
+          <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 flex flex-col gap-2">
+            <div className="text-xs opacity-85">Export SVG</div>
+            <div className="grid grid-cols-1 gap-1.5">
+              <button
+                type="button"
+                onClick={() => runExport(snapshotExportSvg, 'snapshot')}
+                className="rounded-md px-2 py-1.5 text-xs bg-white/10 text-white/85 hover:bg-white/20 transition-colors"
+              >
+                Download SVG (snapshot)
+              </button>
+              <button
+                type="button"
+                onClick={() => runExport(tileableExportSvg, 'tile')}
+                className="rounded-md px-2 py-1.5 text-xs bg-white/10 text-white/85 hover:bg-white/20 transition-colors"
+              >
+                Download tileable SVG
+              </button>
+            </div>
+            <label className="flex items-center gap-2 text-[11px] opacity-80">
+              <input
+                type="checkbox"
+                checked={exportTransparent}
+                onChange={(e) => setExportTransparent(e.target.checked)}
+              />
+              Transparent background
+            </label>
+            <label className="flex items-center gap-2 text-[11px] opacity-80">
+              <input
+                type="checkbox"
+                checked={includeGuides}
+                onChange={(e) => setIncludeGuides(e.target.checked)}
+              />
+              Include guides (snapshot only)
+            </label>
+          </div>
 
           {/* GitHub Link */}
           <div className="mt-auto pt-4">

@@ -10,11 +10,12 @@ import {
 import { asymmetricUnitUv } from '../regions';
 import { unitTemplates } from '../unitTemplates';
 import { motifs } from '../motifs';
-import { motifToSvg, type GalleryMotif } from '../galleryMotifs';
+import { galleryMotifDefs, motifToSvg, type GalleryMotif } from '../galleryMotifs';
 import { switchMotifs } from './shapeMotifs';
 import {
   congruenceClasses,
   discriminatorOf,
+  groupGeoms,
   maximalGroupByLattice,
   storedBasisOf,
   type Discriminator,
@@ -88,6 +89,52 @@ const transformMotif = (m: GalleryMotif, t: Affine2D): GalleryMotif => {
   };
 };
 
+// ── per-member placement, DERIVED (extracted so the user-drawing path in M2 reuses
+// the exact same isometry derivation the stored shape-motifs use) ────────────────
+export type MemberPlacement = {
+  group: WallpaperGroup;
+  // Isometry carrying the reference uv asymmetric unit onto this member's (congruent)
+  // region. The reference itself gets the identity.
+  placement: Affine2D;
+  // World-space view adjustment landing this member's tile on the reference's tile
+  // (see ToggleMember.alignXy). Identity for reflection-only placements.
+  alignXy: Affine2D;
+};
+
+// The placements for a toggle-set reference (the first member of a ≥2 congruence class):
+// one entry per class member, derived purely from the stored region vertices. This is
+// the SAME computation buildToggleSets used inline; both it and the M2 user-drawing path
+// call this so a drawn motif is carried into each member exactly like the stored art.
+export const memberPlacements = (reference: WallpaperGroup): MemberPlacement[] => {
+  const cls = congruenceClasses().find((c) => c.members[0] === reference);
+  if (!cls) throw new Error(`No congruence class with reference: ${reference}`);
+  const basis = storedBasisOf(reference);
+  const B = basisToMatrix(basis);
+  const refUv = asymmetricUnitUv[reference];
+  const refXy = applyToPolygon(B, refUv);
+
+  return cls.members.map((group) => {
+    const memUv = asymmetricUnitUv[group];
+    const memXy = applyToPolygon(basisToMatrix(storedBasisOf(group)), memUv);
+    const order = findCorrespondence(refXy, memXy);
+    if (!order) {
+      throw new Error(`No congruence ${reference}→${group} (class derivation bug)`);
+    }
+    // reference corner k ↦ member corner order[k]
+    const placement = affineFromTriangle(
+      [refUv[0], refUv[1], refUv[2]],
+      [memUv[order[0]], memUv[order[1]], memUv[order[2]]],
+    );
+    // Align this member's tile back onto the reference's: world transform B·P⁻¹·B⁻¹.
+    // Only when P is proper (a rotation+translation) — a reflection can't be undone by
+    // the similarity pose, and that mirror difference is intrinsic (p6 ↔ p31m).
+    const alignXy = isProper(placement)
+      ? conjugateByBasis(B, invert(placement))
+      : identity();
+    return { group, placement, alignXy };
+  });
+};
+
 // ── public types ─────────────────────────────────────────────────────────────
 export type ToggleMember = {
   group: WallpaperGroup;
@@ -139,31 +186,14 @@ const buildToggleSets = (): ToggleSet[] => {
     const reference = cls.members[0];
     const refMotif = switchMotifs[reference];
     if (!refMotif) continue; // no shape-local art authored for this class yet
-    const basis = storedBasisOf(reference);
-    const B = basisToMatrix(basis);
-    const refUv = asymmetricUnitUv[reference];
-    const refXy = applyToPolygon(B, refUv);
 
-    const members: ToggleMember[] = cls.members.map((group) => {
-      const memUv = asymmetricUnitUv[group];
-      const memXy = applyToPolygon(basisToMatrix(storedBasisOf(group)), memUv);
-      const order = findCorrespondence(refXy, memXy);
-      if (!order) {
-        throw new Error(`No congruence ${reference}→${group} (class derivation bug)`);
-      }
-      // reference corner k ↦ member corner order[k]
-      const placement = affineFromTriangle(
-        [refUv[0], refUv[1], refUv[2]],
-        [memUv[order[0]], memUv[order[1]], memUv[order[2]]],
-      );
-      // Align this member's tile back onto the reference's: world transform B·P⁻¹·B⁻¹.
-      // Only when P is proper (a rotation+translation) — a reflection can't be undone by
-      // the similarity pose, and that mirror difference is intrinsic (p6 ↔ p31m).
-      const alignXy = isProper(placement)
-        ? conjugateByBasis(B, invert(placement))
-        : identity();
-      return { group, placedMotif: transformMotif(refMotif, placement), alignXy };
-    });
+    const members: ToggleMember[] = memberPlacements(reference).map(
+      ({ group, placement, alignXy }) => ({
+        group,
+        placedMotif: transformMotif(refMotif, placement),
+        alignXy,
+      }),
+    );
 
     sets.push({
       id: `toggle-${cls.lattice}-${reference}`,
@@ -212,6 +242,88 @@ export const renderableByGroup = (): Map<WallpaperGroup, Renderable> => {
   }
   _renderables = map;
   return map;
+};
+
+// ── M2: user-supplied motifs as a new SOURCE of the same GalleryMotif geometry ───
+// A drawn (or chosen) motif is authored in the toggle-set's REFERENCE frame and flows
+// through the exact same placement the stored shape-motifs use, so it tiles and toggles
+// identically — only the source of the geometry is new.
+
+// The reference group of a group's toggle set, or the group itself if it's a singleton
+// (the frame the user draws in, stable across a toggle).
+export const referenceGroupOf = (group: WallpaperGroup): WallpaperGroup => {
+  const set = toggleSets().find((s) => s.members.some((m) => m.group === group));
+  return set ? set.reference : group;
+};
+
+// Do two groups share the same drawing frame (same congruence-class reference region)?
+// True ⇒ switching between them is a toggle within one set: the drawing (and chosen
+// preset) is KEPT and re-mapped by the placement isometry. False ⇒ a different class /
+// region, so the drawing must be reset. Drives the M2 reset-on-class-change rule.
+export const sameDrawingFrame = (a: WallpaperGroup, b: WallpaperGroup): boolean =>
+  referenceGroupOf(a) === referenceGroupOf(b);
+
+// Carry a reference-frame user motif into `group`'s own (congruent) region.
+export const placedUserMotif = (
+  group: WallpaperGroup,
+  motifRef: GalleryMotif,
+): GalleryMotif => {
+  const ref = referenceGroupOf(group);
+  if (ref === group) return motifRef; // reference member or singleton: identity placement
+  const mp = memberPlacements(ref).find((p) => p.group === group);
+  if (!mp) return motifRef;
+  return transformMotif(motifRef, mp.placement);
+};
+
+// Renderable for a reference-frame user motif under `group` (mirrors renderableByGroup
+// for stored motifs, but the geometry comes from the drawing/preset).
+export const placeUserMotif = (
+  group: WallpaperGroup,
+  motifRef: GalleryMotif,
+): Renderable => {
+  const basis = storedBasisOf(group);
+  const regionXy = applyToPolygon(basisToMatrix(basis), asymmetricUnitUv[group]);
+  const ref = referenceGroupOf(group);
+  const alignXy =
+    ref === group
+      ? identity()
+      : (memberPlacements(ref).find((p) => p.group === group)?.alignXy ?? identity());
+  return {
+    template: switchTemplate(group, basis, regionXy),
+    motifSvg: motifToSvg(placedUserMotif(group, motifRef)),
+    alignXy,
+  };
+};
+
+// Gallery presets whose native region is STRICTLY congruent (same lattice + region
+// signature) to `group`'s reference region, each expressed in the reference frame so it
+// can be loaded as a starting drawing and toggled like any user motif. A preset authored
+// for the reference group is used as-is; one authored for another member of the set is
+// carried back to the reference frame by the inverse member placement. Strict congruence
+// only — sets with no congruent preset return [] (the UI shows "draw your own").
+export type PresetOption = { id: string; motifRef: GalleryMotif };
+
+export const congruentPresets = (group: WallpaperGroup): PresetOption[] => {
+  const ref = referenceGroupOf(group);
+  const geoms = new Map(groupGeoms().map((g) => [g.group, g]));
+  const refGeom = geoms.get(ref);
+  if (!refGeom) return [];
+  const placements = memberPlacements(ref);
+  const out: PresetOption[] = [];
+  for (const [id, def] of Object.entries(galleryMotifDefs)) {
+    // Gallery motif ids are `${nativeGroup}-${name}` (galleryMotifs.ts).
+    const native = id.split('-')[0] as WallpaperGroup;
+    const g = geoms.get(native);
+    if (!g || g.lattice !== refGeom.lattice || g.sigKey !== refGeom.sigKey) continue;
+    if (native === ref) {
+      out.push({ id, motifRef: def });
+      continue;
+    }
+    const mp = placements.find((p) => p.group === native);
+    if (!mp) continue; // congruent but not a placed member (shouldn't happen)
+    out.push({ id, motifRef: transformMotif(def, invert(mp.placement)) });
+  }
+  return out;
 };
 
 // ── UI structure: lattice → classes (toggle | single), each headed by its maximal group

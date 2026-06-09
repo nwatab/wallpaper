@@ -1,9 +1,11 @@
-import type { Affine2D, DebugOptions, Pose, Rect, Scene, UnitTemplate } from '../types';
+import type { Affine2D, DebugOptions, Pose, Rect, Scene, UnitTemplate, WallpaperGroup } from '../types';
 import { tile } from '../engine/tile';
-import { compose, rotateDeg, scaleUniform } from '../affine';
+import { basisToMatrix, compose, invert, rotateDeg, scaleUniform } from '../affine';
+import type { GalleryMotif } from '../galleryMotifs';
 import { renderMotifLayer, renderOverlayLayer } from '../engine/render';
-import { renderableByGroup } from './shapeFamilies';
+import { placeUserMotif, renderableByGroup } from './shapeFamilies';
 import { renderSymmetryElements } from './symmetryElements';
+import { buildCanvasMapping, type CanvasRect, type CanvasMapping } from '../draw/canvasMapping';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // renderSwitchSvg — the M1 render entry point. A NEW path layered on the verified
@@ -83,16 +85,24 @@ const renderTemplateSvg = (args: {
   `.trim();
 };
 
-// Render any group (toggle member or singleton) — resolves its motif + template.
+// Render any group (toggle member or singleton). The motif comes from the stored
+// shape-motif (renderableByGroup) unless a user motif is supplied — a drawing or chosen
+// preset authored in the toggle-set's reference frame — in which case it is placed into
+// this group's region through the same isometry (placeUserMotif). Everything downstream
+// (tile, clip, group action) is identical, so the user motif tiles and toggles like the
+// stored art.
 export const renderGroupSvg = (args: {
   group: string;
   viewport: Rect;
   scale: number;
   rotationDeg: number;
+  motif?: GalleryMotif;
   debugOptions?: DebugOptions;
   showSymmetryElements?: boolean;
 }): string => {
-  const r = renderableByGroup().get(args.group as never);
+  const r = args.motif
+    ? placeUserMotif(args.group as WallpaperGroup, args.motif)
+    : renderableByGroup().get(args.group as never);
   if (!r) return '';
   // Effective pose = userPose ∘ alignXy: align this member's tile onto its toggle-set
   // reference (rotation + translation), then apply the user's scale/rotation.
@@ -106,4 +116,58 @@ export const renderGroupSvg = (args: {
     debugOptions: args.debugOptions,
     showSymmetryElements: args.showSymmetryElements,
   });
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DRAW-PANE PREVIEW. A fixed, un-posed view of one fundamental region in true XY
+// geometry, fitted to the canvas, showing the group's immediate cell orbit of the
+// (placed) motif so the user SEES each mark reflected/rotated as they draw. It reuses
+// renderTemplateSvg — and therefore the SAME motifLayer:'clip' policy as the wallpaper
+// (so preview and tiled output match) and the same symmetry overlay. Returns the SVG
+// plus the px↔uv affines the capture UI needs:
+//   toUv    — canvas pixel → reference-frame uv (append to the stored stroke)
+//   toCanvas — reference-frame uv → canvas pixel (draw the in-progress stroke)
+// ─────────────────────────────────────────────────────────────────────────────
+export const renderRegionPreview = (args: {
+  group: string;
+  motif: GalleryMotif;
+  canvas: CanvasRect;
+  showSymmetryElements?: boolean;
+  debugOptions?: DebugOptions;
+}): {
+  svg: string;
+  mapping: CanvasMapping;
+  toUv: Affine2D;
+  toCanvas: Affine2D;
+} => {
+  const r = placeUserMotif(args.group as WallpaperGroup, args.motif);
+  const B = basisToMatrix(r.template.basis);
+  // Fit the region (XY) into the canvas → a uniform similarity (scale + translate).
+  const mapping = buildCanvasMapping(r.template.regionXy, args.canvas);
+  const pose: Pose = {
+    scale: mapping.toCanvas.a,
+    rotationDeg: 0,
+    translate: { x: mapping.toCanvas.e, y: mapping.toCanvas.f },
+  };
+  const viewport: Rect = {
+    x: 0,
+    y: 0,
+    width: args.canvas.width,
+    height: args.canvas.height,
+  };
+  const svg = renderTemplateSvg({
+    template: r.template,
+    motifSvg: r.motifSvg,
+    viewport,
+    pose,
+    debugOptions: args.debugOptions,
+    showSymmetryElements: args.showSymmetryElements,
+  });
+  return {
+    svg,
+    mapping,
+    // canvas → XY → uv  and  uv → XY → canvas.
+    toUv: compose(invert(B), mapping.fromCanvas),
+    toCanvas: compose(mapping.toCanvas, B),
+  };
 };

@@ -1,0 +1,602 @@
+[
+  {
+    "id": "toggle-rectangular-pm",
+    "lattice": "rectangular",
+    "reference": "pm",
+    "discriminator": {
+      "kind": "mirror-presence",
+      "caption": "pg has no mirror lines — the same tile repeats as glides/translations only; pm adds mirror lines, so the identical drawing becomes a reflected pattern."
+    },
+    "members": [
+      {
+        "group": "pm",
+        "alignXy": {
+          "a": 1,
+          "b": 0,
+          "c": 0,
+          "d": 1,
+          "e": 0,
+          "f": 0
+        },
+        "placedMotif": {
+          "fills": [
+            {
+              "pts": [
+                {
+                  "x": 0.24,
+                  "y": 0.66
+                },
+                {
+                  "x": 0.38,
+                  "y": 0.66
+                },
+                {
+                  "x": 0.3,
+                  "y": 0.8
+                }
+              ],
+              "color": "#b5402a"
+            }
+          ],
+          "strokes": [
+            {
+              "pts": [
+                {
+                  "x": 0.12,
+                  "y": 0.12
+                },
+                {
+                  "x": 0.12,
+                  "y": 0.88
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            },
+            {
+              "pts": [
+                {
+                  "x": 0.12,
+                  "y": 0.12
+                },
+                {
+                  "x": 0.42,
+                  "y": 0.12
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            },
+            {
+              "pts": [
+                {
+                  "x": 0.12,
+                  "y": 0.45
+                },
+                {
+                  "x": 0.32,
+                  "y": 0.45
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            }
+          ]
+        }
+      },
+      {
+        "group": "pg",
+        "alignXy": {
+          "a": 0,
+          "b": -1,
+          "c": 1,
+          "d": 0,
+          "e": 0,
+          "f": 1
+        },
+        "placedMotif": {
+          "fills": [
+            {
+              "pts": [
+                {
+                  "x": 0.33999999999999997,
+                  "y": 0.24
+                },
+                {
+                  "x": 0.33999999999999997,
+                  "y": 0.38
+                },
+                {
+                  "x": 0.19999999999999996,
+                  "y": 0.3
+                }
+              ],
+              "color": "#b5402a"
+            }
+          ],
+          "strokes": [
+            {
+              "pts": [
+                {
+                  "x": 0.88,
+                  "y": 0.12
+                },
+                {
+                  "x": 0.12,
+                  "y": 0.12
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            },
+            {
+              "pts": [
+                {
+                  "x": 0.88,
+                  "y": 0.12
+                },
+                {
+                  "x": 0.88,
+                  "y": 0.42
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            },
+            {
+              "pts": [
+                {
+                  "x": 0.55,
+                  "y": 0.12
+                },
+                {
+                  "x": 0.55,
+                  "y": 0.32
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "toggle-rectangular-pmm",
+    "lattice": "rectangular",
+    "reference": "pmm",
+    "discriminator": {
+      "kind": "incidence",
+      "caption": "Same mirrors, different placement: in pmm every 2-fold centre lies on a mirror line; in pmg the 2-fold centres sit off the mirrors."
+    },
+    "members": [
+      {
+        "group": "pmm",
+        "alignXy": {
+          "a": 1,
+          "b": 0,
+          "c": 0,
+          "d": 1,
+          "e": 0,
+          "f": 0
+        },
+        "placedMotif": {
+          "fills": [
+            {
+              "pts": [
+                {
+                  "x": 0.12,
+                  "y": 0.22
+                },
+                {
+                  "x": 0.24,
+                  "y": 0.22
+                },
+                {
+                  "x": 0.16,
+                  "y": 0.32
+                }
+              ],
+              "color": "#b5402a"
+            }
+          ],
+          "strokes": [
+            {
+              "pts": [
+                {
+                  "x": 0.1,
+                  "y": 0.1
+                },
+                {
+                  "x": 0.4,
+                  "y": 0.1
+                },
+                {
+                  "x": 0.4,
+                  "y": 0.4
+                },
+                {
+                  "x": 0.2,
+                  "y": 0.4
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            }
+          ]
+        }
+      },
+      {
+        "group": "pmg",
+        "alignXy": {
+          "a": 1,
+          "b": 0,
+          "c": 0,
+          "d": 1,
+          "e": 0,
+          "f": 0
+        },
+        "placedMotif": {
+          "fills": [
+            {
+              "pts": [
+                {
+                  "x": 0.12,
+                  "y": 0.22
+                },
+                {
+                  "x": 0.24,
+                  "y": 0.22
+                },
+                {
+                  "x": 0.16,
+                  "y": 0.32
+                }
+              ],
+              "color": "#b5402a"
+            }
+          ],
+          "strokes": [
+            {
+              "pts": [
+                {
+                  "x": 0.1,
+                  "y": 0.1
+                },
+                {
+                  "x": 0.4,
+                  "y": 0.1
+                },
+                {
+                  "x": 0.4,
+                  "y": 0.4
+                },
+                {
+                  "x": 0.2,
+                  "y": 0.4
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "toggle-square-p4m",
+    "lattice": "square",
+    "reference": "p4m",
+    "discriminator": {
+      "kind": "incidence",
+      "caption": "Same mirrors, different placement: in p4m every 4-fold centre lies on a mirror line; in p4g the 4-fold centres sit off the mirrors."
+    },
+    "members": [
+      {
+        "group": "p4m",
+        "alignXy": {
+          "a": 1,
+          "b": 0,
+          "c": 0,
+          "d": 1,
+          "e": 0,
+          "f": 0
+        },
+        "placedMotif": {
+          "fills": [
+            {
+              "pts": [
+                {
+                  "x": 0.38,
+                  "y": 0.26
+                },
+                {
+                  "x": 0.46,
+                  "y": 0.26
+                },
+                {
+                  "x": 0.42,
+                  "y": 0.33
+                }
+              ],
+              "color": "#b5402a"
+            }
+          ],
+          "strokes": [
+            {
+              "pts": [
+                {
+                  "x": 0.46,
+                  "y": 0.06
+                },
+                {
+                  "x": 0.46,
+                  "y": 0.34
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            },
+            {
+              "pts": [
+                {
+                  "x": 0.46,
+                  "y": 0.06
+                },
+                {
+                  "x": 0.14,
+                  "y": 0.06
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            },
+            {
+              "pts": [
+                {
+                  "x": 0.46,
+                  "y": 0.2
+                },
+                {
+                  "x": 0.26,
+                  "y": 0.2
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            }
+          ]
+        }
+      },
+      {
+        "group": "p4g",
+        "alignXy": {
+          "a": 0,
+          "b": 1,
+          "c": -1,
+          "d": 0,
+          "e": 0.5,
+          "f": 0
+        },
+        "placedMotif": {
+          "fills": [
+            {
+              "pts": [
+                {
+                  "x": 0.26,
+                  "y": 0.12
+                },
+                {
+                  "x": 0.26,
+                  "y": 0.03999999999999998
+                },
+                {
+                  "x": 0.33,
+                  "y": 0.08000000000000002
+                }
+              ],
+              "color": "#b5402a"
+            }
+          ],
+          "strokes": [
+            {
+              "pts": [
+                {
+                  "x": 0.06,
+                  "y": 0.03999999999999998
+                },
+                {
+                  "x": 0.34,
+                  "y": 0.03999999999999998
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            },
+            {
+              "pts": [
+                {
+                  "x": 0.06,
+                  "y": 0.03999999999999998
+                },
+                {
+                  "x": 0.06,
+                  "y": 0.36
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            },
+            {
+              "pts": [
+                {
+                  "x": 0.2,
+                  "y": 0.03999999999999998
+                },
+                {
+                  "x": 0.2,
+                  "y": 0.24
+                }
+              ],
+              "width": 0.04,
+              "color": "#1c3f7a"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "toggle-hexagonal-p6",
+    "lattice": "hexagonal",
+    "reference": "p6",
+    "discriminator": {
+      "kind": "mirror-presence",
+      "caption": "p6 has no mirror lines — the same tile repeats as a chiral, 6-fold pinwheel; p31m adds mirror lines, so the identical drawing becomes a reflected pattern."
+    },
+    "members": [
+      {
+        "group": "p6",
+        "alignXy": {
+          "a": 1,
+          "b": 0,
+          "c": 0,
+          "d": 1,
+          "e": 0,
+          "f": 0
+        },
+        "placedMotif": {
+          "fills": [
+            {
+              "pts": [
+                {
+                  "x": 0.06,
+                  "y": 0.08
+                },
+                {
+                  "x": 0.34,
+                  "y": 0.58
+                },
+                {
+                  "x": 0.7,
+                  "y": 0.78
+                },
+                {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                {
+                  "x": 0.2,
+                  "y": 0.18
+                }
+              ],
+              "color": "#2f6fb0"
+            }
+          ],
+          "strokes": [
+            {
+              "pts": [
+                {
+                  "x": 0.06,
+                  "y": 0.08
+                },
+                {
+                  "x": 0.95,
+                  "y": 0.97
+                }
+              ],
+              "width": 0.045,
+              "color": "#1c3f7a"
+            },
+            {
+              "pts": [
+                {
+                  "x": 0.34,
+                  "y": 0.62
+                },
+                {
+                  "x": 0.66,
+                  "y": 0.74
+                }
+              ],
+              "width": 0.045,
+              "color": "#1c3f7a"
+            }
+          ]
+        }
+      },
+      {
+        "group": "p31m",
+        "alignXy": {
+          "a": 1,
+          "b": 0,
+          "c": 0,
+          "d": 1,
+          "e": 0,
+          "f": 0
+        },
+        "placedMotif": {
+          "fills": [
+            {
+              "pts": [
+                {
+                  "x": 0.08,
+                  "y": 0.06
+                },
+                {
+                  "x": 0.58,
+                  "y": 0.34
+                },
+                {
+                  "x": 0.78,
+                  "y": 0.7
+                },
+                {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                {
+                  "x": 0.18,
+                  "y": 0.2
+                }
+              ],
+              "color": "#2f6fb0"
+            }
+          ],
+          "strokes": [
+            {
+              "pts": [
+                {
+                  "x": 0.08,
+                  "y": 0.06
+                },
+                {
+                  "x": 0.97,
+                  "y": 0.95
+                }
+              ],
+              "width": 0.045,
+              "color": "#1c3f7a"
+            },
+            {
+              "pts": [
+                {
+                  "x": 0.62,
+                  "y": 0.34
+                },
+                {
+                  "x": 0.74,
+                  "y": 0.66
+                }
+              ],
+              "width": 0.045,
+              "color": "#1c3f7a"
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

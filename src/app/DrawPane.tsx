@@ -9,6 +9,7 @@ import {
   type Fill,
 } from '@/wallpaper/galleryMotifs';
 import { getGroup } from '@/wallpaper/groups';
+import { foldFillUv, foldShapeUv } from '@/wallpaper/draw/foldIntoRegion';
 import { renderRegionPreview } from '@/wallpaper/switch/renderSwitch';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -127,15 +128,28 @@ export default function DrawPane({
     onMotifChange(next);
   };
 
+  // Fold the gesture into the asymmetric unit (kaleidoscope capture): the stored motif
+  // must live inside the unit (the renderer clips each orbit copy to its region), and
+  // folding — rather than clipping — keeps ink drawn anywhere on the canvas visible
+  // exactly where it was drawn. One gesture may fold into several pieces; it stays a
+  // single commit so Undo removes it atomically.
   const commitShape = (pts: Vec2[]) => {
     if (pts.length < 2) return;
     const closed = tool === 'rect' || tool === 'ellipse';
+    const group = referenceGroup as WallpaperGroup;
     if (closed && fillMode) {
-      const fill: Fill = { pts, color };
-      commit({ ...motif, fills: [...(motif.fills ?? []), fill] });
+      const fills: Fill[] = foldFillUv(pts, group).map((pp) => ({ pts: pp, color }));
+      if (fills.length === 0) return;
+      commit({ ...motif, fills: [...(motif.fills ?? []), ...fills] });
     } else {
-      const stroke: Stroke = { pts, width, color, closed };
-      commit({ ...motif, strokes: [...(motif.strokes ?? []), stroke] });
+      const strokes: Stroke[] = foldShapeUv(pts, closed, group).map((s) => ({
+        pts: s.pts,
+        width,
+        color,
+        closed: s.closed,
+      }));
+      if (strokes.length === 0) return;
+      commit({ ...motif, strokes: [...(motif.strokes ?? []), ...strokes] });
     }
   };
 

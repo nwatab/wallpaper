@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { Vec2, WallpaperGroup } from '../types';
-import { applyToPoint } from '../affine';
+import type { Affine2D, Rect, Vec2, WallpaperGroup } from '../types';
+import { applyToPoint, basisToMatrix, compose, invert } from '../affine';
 import { asymmetricUnitUv } from '../regions';
+import { tile } from '../engine/tile';
+import { placeUserMotif } from '../switch/shapeFamilies';
 import {
   foldFillUv,
   foldShapeUv,
@@ -142,6 +144,101 @@ describe('foldShapeUv', () => {
           );
         }
       }
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NON-SELF-REFERENTIAL GUARDS. The invariants above check the fold against its own
+// model (asymmetricUnitUv + regionCandidatesUv). These two suites pin that model to
+// the things that actually decide visibility:
+//   coverage — locate() can never silently drop a point anywhere in (or around) the
+//              cell, the precondition for "ink survives wherever you draw";
+//   bridge   — every fold candidate IS an engine orbit transform and the engine's
+//              clip polygon IS the unit the fold targets, so "inside the unit under
+//              candidate c" is exactly the renderer's per-copy clip condition.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('candidate coverage (no silent drops)', () => {
+  it('covers a dense grid over the cell + draw-window margin for every group', () => {
+    // The square canvas centres the unit's bbox, so a skinny bbox (pm: 0.5×1) leaves
+    // slack margins up to (360−28·2−s·short)/2 ≈ 0.35 uv around the bbox — all of it
+    // drawable. Scan the cell plus that worst-case margin. This grid found the cmm
+    // corner holes that forced LATTICE_WINDOW = 2 (engine TILE_OVERSCAN parity).
+    const groups = Object.keys(asymmetricUnitUv) as WallpaperGroup[];
+    for (const group of groups) {
+      const cands = regionCandidatesUv(group);
+      const holes: string[] = [];
+      for (let x = -0.36; x <= 1.36; x += 0.01) {
+        for (let y = -0.36; y <= 1.36; y += 0.01) {
+          const covered = cands.some((c) =>
+            insideRegion(applyToPoint(c.inv, { x, y }), group),
+          );
+          if (!covered) holes.push(`(${x.toFixed(2)},${y.toFixed(2)})`);
+        }
+      }
+      expect(holes, `${group} uncovered: ${holes.slice(0, 8).join(' ')}`).toHaveLength(0);
+    }
+  });
+});
+
+describe('fold model ≡ engine orbit (renderer bridge)', () => {
+  const matClose = (m: Affine2D, n: Affine2D): boolean =>
+    Math.max(
+      Math.abs(m.a - n.a),
+      Math.abs(m.b - n.b),
+      Math.abs(m.c - n.c),
+      Math.abs(m.d - n.d),
+      Math.abs(m.e - n.e),
+      Math.abs(m.f - n.f),
+    ) < 1e-9;
+
+  // World-XY rect spanning the [-1,2]² cell range, so tile() must enumerate at least
+  // the fold's 3×3 lattice neighbourhood.
+  const cellsRect = (B: Affine2D): Rect => {
+    const pts: Vec2[] = [
+      { x: -1, y: -1 },
+      { x: 2, y: -1 },
+      { x: 2, y: 2 },
+      { x: -1, y: 2 },
+    ].map((p) => applyToPoint(B, p));
+    const xs = pts.map((p) => p.x);
+    const ys = pts.map((p) => p.y);
+    const x = Math.min(...xs);
+    const y = Math.min(...ys);
+    return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+  };
+
+  it('every fold candidate equals an engine orbit transform; clip polygon equals the unit', () => {
+    const groups = Object.keys(asymmetricUnitUv) as WallpaperGroup[];
+    for (const group of groups) {
+      const r = placeUserMotif(group, {});
+      const B = basisToMatrix(r.template.basis);
+      const { orbitElements, regionXy } = tile({
+        template: r.template,
+        viewport: cellsRect(B),
+        pose: { scale: 1, rotationDeg: 0 },
+      });
+
+      // engine orbit transform for the user-motif pipeline: el = pose ∘ B ∘ (t ∘ op),
+      // so with identity pose every candidate must appear as B ∘ c.fwd
+      for (const c of regionCandidatesUv(group)) {
+        const expected = compose(B, c.fwd);
+        expect(
+          orbitElements.some((el) => matClose(el.transform, expected)),
+          `${group}: candidate missing from engine orbit`,
+        ).toBe(true);
+      }
+
+      // the renderer's clip polygon (renderMotifLayer: B⁻¹ · regionXy) is the unit
+      const Binv = invert(B);
+      const clipUv = regionXy.map((p) => applyToPoint(Binv, p));
+      const unit = asymmetricUnitUv[group];
+      expect(clipUv).toHaveLength(unit.length);
+      clipUv.forEach((p, i) => {
+        expect(p.x, `${group} clip vertex ${i}.x`).toBeCloseTo(unit[i].x, 9);
+        expect(p.y, `${group} clip vertex ${i}.y`).toBeCloseTo(unit[i].y, 9);
+      });
     }
   });
 });

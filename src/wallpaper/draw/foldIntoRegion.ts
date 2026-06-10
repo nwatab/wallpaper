@@ -43,18 +43,25 @@ const edgeValues = (p: Vec2, poly: Vec2[], winding: number): number[] =>
 const insideConvex = (p: Vec2, poly: Vec2[], winding: number): boolean =>
   edgeValues(p, poly, winding).every((d) => d >= -EPS_INSIDE);
 
+// Lattice window for the candidate copies, ±LATTICE_WINDOW cells. Must be 2 for the
+// same reason as the engine's TILE_OVERSCAN: origin-based ops (rotations/glides about
+// a corner, e.g. cmm's (u,v)↦(−u,−v)) throw their copy to the far side of the origin,
+// so covering a point just outside cell corner (1,0) can take translate (+2,0). The
+// coverage test scans the cell plus the widest canvas margin densely to pin this.
+const LATTICE_WINDOW = 2;
+
 // The copies of the asymmetric unit that cover the draw window: the cell's cosetReps
-// plus the 3×3 lattice neighbourhood (the window is the region bbox + padding, which
-// never extends further than the adjacent cells). Home cell first, so in-cell copies
-// win the membership scan.
+// plus the surrounding lattice translates, ordered home-cell-first and then by ring,
+// so near copies win the membership scan.
 export const regionCandidatesUv = (group: WallpaperGroup): Candidate[] => {
   const ops = getGroup(group).cosetReps;
-  const cells: Array<[number, number]> = [[0, 0]];
-  for (let i = -1; i <= 1; i++) {
-    for (let j = -1; j <= 1; j++) {
-      if (i !== 0 || j !== 0) cells.push([i, j]);
+  const cells: Array<[number, number]> = [];
+  for (let i = -LATTICE_WINDOW; i <= LATTICE_WINDOW; i++) {
+    for (let j = -LATTICE_WINDOW; j <= LATTICE_WINDOW; j++) {
+      cells.push([i, j]);
     }
   }
+  cells.sort((p, q) => Math.max(Math.abs(p[0]), Math.abs(p[1])) - Math.max(Math.abs(q[0]), Math.abs(q[1])));
   return cells.flatMap(([i, j]) =>
     ops.map((op) => {
       const fwd = compose(translateXy(i, j), op);

@@ -249,8 +249,13 @@ test('rotation-swept arbiter: warp reproduces gallery as identity (D→I, det+1)
       const wImg = await screenshotWallpaper(page);
       const w = strokeDirections(wImg);
 
-      // Rotation-aware labels: gallery bar≈rot, stem≈rot+γ; warp matched to the labelled gallery.
-      const gl = assignByTargets(g, rot, rot + gammaDeg);
+      // Rotation-aware labels. The Rotation slider is CCW-positive (coords/canonical):
+      // a slider value `rot` renders at internal angle (360−rot)%360, so the gallery bar
+      // appears on screen at `shownDeg`, stem at `shownDeg+γ`. (rot=0 ⇒ shownDeg=0,
+      // unchanged.) The warp is matched relative to the labelled gallery, so only the
+      // gallery's absolute target uses the convention.
+      const shownDeg = (360 - rot) % 360;
+      const gl = assignByTargets(g, shownDeg, shownDeg + gammaDeg);
       const wl = assignByTargets(w, gl.bar.deg, gl.stem.deg);
       const D = fitD({ ...g, ...gl }, { ...w, ...wl }).Draw;
       const distI = matResidual(D, I_MAT);

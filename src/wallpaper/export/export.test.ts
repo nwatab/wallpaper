@@ -181,9 +181,11 @@ describe('export action wiring (same state → distinct outputs)', () => {
   const snap = snapshotExportSvg(state);
   const tileable = tileableExportSvg(state);
 
-  it('snapshot is the as-displayed render — NOT a <pattern>, viewBox = the viewport', () => {
+  it('snapshot is the as-displayed render — NOT a <pattern>, viewBox = centred viewport', () => {
     expect(snap).not.toContain('<pattern');
-    expect(snap).toContain('viewBox="0 0 400 400"');
+    // The display surface centres the viewBox on the viewport (coords/ view stage):
+    // a 400×400 viewport → "-200 -200 400 400". Still the as-displayed render (not a tile).
+    expect(snap).toContain('viewBox="-200 -200 400 400"');
   });
 
   it('tileable is the canonical unit <pattern> — patternTransform, unit cell, no viewport viewBox', () => {

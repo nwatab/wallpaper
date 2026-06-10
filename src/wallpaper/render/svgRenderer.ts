@@ -43,6 +43,7 @@ export const createSvgRenderer = (): PatternRenderer<string> => ({
       basis,
       regionXy,
       motifLayer: template.motifLayer,
+      depthRotationDeg: template.defaultPose?.rotationDeg ?? 0,
     };
 
     return renderSvg(scene, debugOptions, {

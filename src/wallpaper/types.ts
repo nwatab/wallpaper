@@ -105,4 +105,7 @@ export type Scene = {
   regionXy: Vec2[];
   // Compositing policy for the motif layer (see UnitTemplate.motifLayer).
   motifLayer?: 'clip' | 'overlap';
+  // Intrinsic recede orientation for 'overlap' painter's depth (template.defaultPose.rotationDeg).
+  // Pose-independent; shared with the seamless-cell baking so both stack copies identically.
+  depthRotationDeg?: number;
 };

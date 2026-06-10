@@ -6,6 +6,23 @@ export const motifs: Record<string, string> = {
   // any id clash.
   ...galleryMotifSvg,
 
+  // DEV-ONLY warp probe: a CHIRAL "F" (no mirror symmetry about either axis), so its x-flip,
+  // y-flip and identity images are all DISTINCT — a DIRECTION-preserving (mod 360) matcher can tell
+  // them apart, and tiling it lets the warp E2E guards read the full gallery→warp affine D. Drawn
+  // in uv [0,1] (cell-origin relative): vertical stem on the left, two bars to the right (long top +
+  // short middle), SVG y-down so the bars sit at SMALL y (cell top). Only present under `next dev`.
+  ...(process.env.NODE_ENV === 'development'
+    ? {
+        'motif-dev-f': `
+    <g fill="black">
+      <rect x="0.30" y="0.15" width="0.12" height="0.70"/>
+      <rect x="0.30" y="0.15" width="0.45" height="0.12"/>
+      <rect x="0.30" y="0.45" width="0.32" height="0.10"/>
+    </g>
+  `,
+      }
+    : {}),
+
   // cell全体向け（p1の例）
   'motif-a': `
     <g>

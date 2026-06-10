@@ -36,3 +36,4 @@ yarn-error.log*
 next-env.d.ts
 # generated visual snapshots (pnpm test regenerates them)
 __snapshots__/
+/test-results/

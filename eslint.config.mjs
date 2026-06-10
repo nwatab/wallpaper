@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // E2E harness runs under Playwright (its own TS/runtime), not the app lint.
+    'e2e/**',
+    'playwright.config.ts',
   ]),
   {
     rules: {

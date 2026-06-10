@@ -9,6 +9,7 @@ import {
   translateXy,
 } from '../affine';
 import { tile } from '../engine/tile';
+import { overlapDepth } from '../engine/render';
 import { motifs } from '../motifs';
 import type { GalleryMotif } from '../galleryMotifs';
 import { placeUserMotif, renderableByGroup } from '../switch/shapeFamilies';
@@ -88,6 +89,9 @@ export type TileableGeometry = {
   // Fundamental region (XY), used to clip self-contained copies.
   regionXy: Vec2[];
   motifLayer?: 'clip' | 'overlap';
+  // Intrinsic recede orientation for 'overlap' depth (template.defaultPose.rotationDeg). Shared
+  // with the gallery renderer (engine/render.overlapDepth) so the baked cell stacks identically.
+  depthRotationDeg?: number;
 };
 
 export type TileableOptions = {
@@ -109,10 +113,95 @@ const pointsToPathD = (pts: Vec2[]): string =>
       pts.slice(1).map((p) => `L ${p.x} ${p.y}`).join(' ') +
       ' Z';
 
-// On-screen depth of a copy's motif centre in the canonical (un-posed) frame: the XY y of
-// the motif centre after basis. Mirrors render.ts so overlap copies stack identically.
-const motifDepth = (basisMatrix: Affine2D, uv: Affine2D): number =>
-  applyToPoint(compose(basisMatrix, uv), CENTRE).y;
+// Canonical (un-posed) XY centre of a stamped copy: the motif centre after its uv transform
+// and the basis. Fed to the SHARED overlapDepth (engine/render) so the baked cell stacks
+// overlap copies in exactly the gallery's painter's order.
+const stampCentre = (basisMatrix: Affine2D, uv: Affine2D): Vec2 =>
+  applyToPoint(compose(basisMatrix, uv), CENTRE);
+
+// The uv-space transforms whose images the cell stamps: each coset op conjugated to uv
+// (opUv = B⁻¹ ∘ opXY ∘ B) AND each of its lattice-neighbour copies (NEIGHBORS). The neighbour
+// wrap is essential, not cosmetic: the cell content must fill the WHOLE unit square so that
+// translation-tiling it reproduces the full group. For PRIMITIVE lattices the coset-rep copies
+// already partition the cell, so the t=0 copies suffice and the neighbours fall outside (and are
+// clipped away). For CENTERED lattices (cm, cmm) some coset-rep copies land OUTSIDE [0,1]² at
+// their raw position — their in-cell halves arrive only via a lattice neighbour. Without the
+// wrap those copies are dropped and the tiling is sparse (the cmm bug). The cell-clip below
+// trims everything back to the unit square so the result is exactly one period either way.
+// Exported for verify/cell-tiling.test.ts, which checks this reproduces every group's orbit.
+export const cellStampTransforms = (
+  basis: { a: Vec2; b: Vec2 },
+  opsInCellXy: Affine2D[],
+): Affine2D[] => {
+  const B = basisToMatrix(basis);
+  const Binv = invert(B);
+  const opsUv = opsInCellXy.map((op) => compose(Binv, compose(op, B)));
+  return NEIGHBORS.flatMap(({ di, dj }) =>
+    opsUv.map((uv) => compose(translateXy(di, dj), uv)),
+  );
+};
+
+// The defs + body of ONE seamless cell, authored in the unit-square (uv) frame. Every coset op
+// (and its lattice neighbours) stamps the motif, all clipped to the unit cell — so the cell
+// holds one complete period for EVERY lattice (the basis skew/scale is carried by the caller:
+// patternTransform for the tileable SVG, B⁻¹ in the warp shader). This is the SINGLE source of
+// the cell's ink, shared by buildTileableSvg and buildCellSvg, so the warped texture is the
+// same cell the tile export emits.
+const CELL_CLIP = `<clipPath id="cell-clip" clipPathUnits="userSpaceOnUse"><rect x="0" y="0" width="1" height="1"/></clipPath>`;
+
+const buildCellLayers = (
+  geometry: TileableGeometry,
+): { defs: string; body: string } => {
+  const { basis, opsInCellXy, motifSvg, regionXy, motifLayer } = geometry;
+
+  const B = basisToMatrix(basis);
+  const stamps = cellStampTransforms(basis, opsInCellXy);
+
+  if (motifLayer === 'overlap') {
+    // Paint back-to-front by the SHARED intrinsic recede depth (engine/render.overlapDepth) so
+    // copies stack in exactly the gallery's painter's order — across the 3×3 neighbourhood too,
+    // so arcs are continuous across the cell seam.
+    const depthRot = geometry.depthRotationDeg ?? 0;
+    const ordered = [...stamps].sort(
+      (p, q) =>
+        overlapDepth(stampCentre(B, p), depthRot) -
+        overlapDepth(stampCentre(B, q), depthRot),
+    );
+    const body =
+      `<g clip-path="url(#cell-clip)">` +
+      ordered
+        .map((uv) => `<g transform="${toSvgMatrix(uv)}">${motifSvg}</g>`)
+        .join('') +
+      `</g>`;
+    return { defs: CELL_CLIP, body };
+  }
+  if (motifLayer === 'clip') {
+    // Each copy is additionally clipped to its own fundamental region (region in uv =
+    // B⁻¹·regionXy) so spill-prone glyphs don't overlap their neighbours.
+    const regionUv = applyToPolygon(invert(B), regionXy);
+    const frClip = `<clipPath id="fr-clip" clipPathUnits="userSpaceOnUse"><path d="${pointsToPathD(
+      regionUv,
+    )}"/></clipPath>`;
+    const body =
+      `<g clip-path="url(#cell-clip)">` +
+      stamps
+        .map(
+          (uv) =>
+            `<g clip-path="url(#fr-clip)" transform="${toSvgMatrix(uv)}">${motifSvg}</g>`,
+        )
+        .join('') +
+      `</g>`;
+    return { defs: CELL_CLIP + frClip, body };
+  }
+  // Default: design motifs already sized to their region; stamp the cell orbit, clipped to cell.
+  const body =
+    `<g clip-path="url(#cell-clip)">` +
+    stamps
+      .map((uv) => `<g transform="${toSvgMatrix(uv)}">${motifSvg}</g>`)
+      .join('') +
+    `</g>`;
+  return { defs: CELL_CLIP, body };
+};
 
 /**
  * Build a seamless, canonical (un-posed) tileable SVG from one cell's geometry. patternTransform
@@ -129,54 +218,13 @@ export const buildTileableSvg = (
   geometry: TileableGeometry,
   options: TileableOptions = {},
 ): string => {
-  const { basis, opsInCellXy, motifSvg, regionXy, motifLayer } = geometry;
+  const { basis } = geometry;
   const background = options.background ?? 'white';
   const repeats = options.repeats ?? 8;
   const targetPx = options.targetPx ?? 1024;
 
   const B = basisToMatrix(basis);
-  const Binv = invert(B);
-  // Each XY coset op expressed in the cell's fractional (uv) frame: opUv = B⁻¹ ∘ opXY ∘ B.
-  // The motif is authored in uv, so stamping it through opUv fills the unit-square cell; the
-  // basis skew/scale is carried entirely by patternTransform below.
-  const opsUv = opsInCellXy.map((op) => compose(Binv, compose(op, B)));
-
-  let defs = '';
-  let body = '';
-
-  if (motifLayer === 'overlap') {
-    const stamps = NEIGHBORS.flatMap(({ di, dj }) =>
-      opsUv.map((uv) => compose(translateXy(di, dj), uv)),
-    );
-    const ordered = [...stamps].sort(
-      (p, q) => motifDepth(B, p) - motifDepth(B, q),
-    );
-    defs = `<clipPath id="cell-clip" clipPathUnits="userSpaceOnUse"><rect x="0" y="0" width="1" height="1"/></clipPath>`;
-    body =
-      `<g clip-path="url(#cell-clip)">` +
-      ordered
-        .map((uv) => `<g transform="${toSvgMatrix(uv)}">${motifSvg}</g>`)
-        .join('') +
-      `</g>`;
-  } else if (motifLayer === 'clip') {
-    // Each copy is clipped to its own fundamental region (region in uv = B⁻¹·regionXy). The
-    // region copies partition the unit cell, so a single-cell stamp is one exact period.
-    const regionUv = applyToPolygon(Binv, regionXy);
-    defs = `<clipPath id="fr-clip" clipPathUnits="userSpaceOnUse"><path d="${pointsToPathD(
-      regionUv,
-    )}"/></clipPath>`;
-    body = opsUv
-      .map(
-        (uv) =>
-          `<g clip-path="url(#fr-clip)" transform="${toSvgMatrix(uv)}">${motifSvg}</g>`,
-      )
-      .join('');
-  } else {
-    // Default: design motifs already sized to their region; stamp the cell orbit in order.
-    body = opsUv
-      .map((uv) => `<g transform="${toSvgMatrix(uv)}">${motifSvg}</g>`)
-      .join('');
-  }
+  const { defs, body } = buildCellLayers(geometry);
 
   // viewBox = bounding box of an N×N block of cells, so the finite preview shows several
   // repeats at the motif's native size. Display scale lives in svg width/height (presentation
@@ -215,6 +263,33 @@ export const buildTileableSvg = (
   return withBackground(svg, background);
 };
 
+// ── Seamless single-cell SVG (Möbius texture source) ─────────────────────────
+
+/**
+ * The ONE seamless cell, drawn in the unit-square (uv) frame as a standalone SVG with
+ * viewBox="0 0 1 1". This is the texture source for the Möbius (WebGL) mode: rasterised to an
+ * N×N image and REPEAT-wrapped, it reproduces the lattice exactly, with the basis skew/scale
+ * applied separately in the shader (B⁻¹·z). It reuses buildCellLayers — the SAME ink the
+ * tileable <pattern> stamps — so the warped texture equals the exported tile's cell.
+ *
+ * No basis is baked in (that is the point: uv is the square the shader samples). Display size
+ * lives only in width/height; the geometry stays the unit square.
+ */
+export const buildCellSvg = (
+  geometry: TileableGeometry,
+  options: { background?: ExportBackground; targetPx?: number } = {},
+): string => {
+  const background = options.background ?? 'white';
+  const targetPx = options.targetPx ?? 1024;
+  const { defs, body } = buildCellLayers(geometry);
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" width="${targetPx}" height="${targetPx}">` +
+    (defs ? `<defs>${defs}</defs>` : '') +
+    body +
+    `</svg>`;
+  return withBackground(svg, background);
+};
+
 // ── Adapters: collect canonical tile geometry for each app mode ───────────────
 
 const PROBE_VIEWPORT: Rect = { x: 0, y: 0, width: 1, height: 1 };
@@ -233,7 +308,14 @@ export const tileableFromTemplate = (
     pose: IDENTITY_POSE,
   });
   return buildTileableSvg(
-    { basis, opsInCellXy, regionXy, motifSvg, motifLayer: template.motifLayer },
+    {
+      basis,
+      opsInCellXy,
+      regionXy,
+      motifSvg,
+      motifLayer: template.motifLayer,
+      depthRotationDeg: template.defaultPose?.rotationDeg ?? 0,
+    },
     options,
   );
 };
@@ -260,9 +342,79 @@ export const tileableFromGroup = (
       regionXy,
       motifSvg: r.motifSvg,
       motifLayer: r.template.motifLayer ?? 'clip',
+      depthRotationDeg: r.template.defaultPose?.rotationDeg ?? 0,
     },
     options,
   );
+};
+
+// ── Cell-source adapters for the Möbius texture (cell SVG + the basis B) ───────
+// The shader needs both the rasterised cell and B (to reduce world z → frac(B⁻¹·z)). These
+// mirror the tileable adapters above but emit the bare cell instead of the <pattern> wrapper.
+
+// The CANONICAL (un-posed) basis. The warp must NOT bake the per-template defaultPose — the
+// gallery MAIN VIEW (what the user compares against) uses the live global pose, not defaultPose.
+// The live view rotation is applied downstream by WarpPane (lattice.rotateBasis) so warp-empty
+// tracks the main view; baking defaultPose here rotated seigaiha 210° away from it.
+export type CellSource = { cellSvg: string; basis: { a: Vec2; b: Vec2 } };
+
+/** Gallery mode: the seamless cell + basis for one authored template. */
+export const cellFromTemplate = (
+  template: UnitTemplate,
+  options?: { background?: ExportBackground; targetPx?: number },
+): CellSource => {
+  const motifSvg = motifs[template.motifId];
+  if (!motifSvg) throw new Error(`Unknown motifId: ${template.motifId}`);
+  const { opsInCellXy, basis, regionXy } = tile({
+    template,
+    viewport: PROBE_VIEWPORT,
+    pose: IDENTITY_POSE,
+  });
+  return {
+    cellSvg: buildCellSvg(
+      {
+        basis,
+        opsInCellXy,
+        regionXy,
+        motifSvg,
+        motifLayer: template.motifLayer,
+        depthRotationDeg: template.defaultPose?.rotationDeg ?? 0,
+      },
+      options,
+    ),
+    basis,
+  };
+};
+
+/** Switcher / Draw mode: the seamless cell + basis for a group (+ optional user/preset motif). */
+export const cellFromGroup = (
+  group: string,
+  motif: GalleryMotif | undefined,
+  options?: { background?: ExportBackground; targetPx?: number },
+): CellSource | null => {
+  const r = motif
+    ? placeUserMotif(group as WallpaperGroup, motif)
+    : renderableByGroup().get(group as WallpaperGroup);
+  if (!r) return null;
+  const { opsInCellXy, basis, regionXy } = tile({
+    template: r.template,
+    viewport: PROBE_VIEWPORT,
+    pose: IDENTITY_POSE,
+  });
+  return {
+    cellSvg: buildCellSvg(
+      {
+        basis,
+        opsInCellXy,
+        regionXy,
+        motifSvg: r.motifSvg,
+        motifLayer: r.template.motifLayer ?? 'clip',
+        depthRotationDeg: r.template.defaultPose?.rotationDeg ?? 0,
+      },
+      options,
+    ),
+    basis,
+  };
 };
 
 // ── Export actions: one named function per download button ────────────────────

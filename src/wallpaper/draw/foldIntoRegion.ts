@@ -52,8 +52,12 @@ const LATTICE_WINDOW = 2;
 
 // The copies of the asymmetric unit that cover the draw window: the cell's cosetReps
 // plus the surrounding lattice translates, ordered home-cell-first and then by ring,
-// so near copies win the membership scan.
+// so near copies win the membership scan. Memoised per group (pure derivation).
+const candidatesCache = new Map<WallpaperGroup, Candidate[]>();
+
 export const regionCandidatesUv = (group: WallpaperGroup): Candidate[] => {
+  const cached = candidatesCache.get(group);
+  if (cached) return cached;
   const ops = getGroup(group).cosetReps;
   const cells: Array<[number, number]> = [];
   for (let i = -LATTICE_WINDOW; i <= LATTICE_WINDOW; i++) {
@@ -62,12 +66,14 @@ export const regionCandidatesUv = (group: WallpaperGroup): Candidate[] => {
     }
   }
   cells.sort((p, q) => Math.max(Math.abs(p[0]), Math.abs(p[1])) - Math.max(Math.abs(q[0]), Math.abs(q[1])));
-  return cells.flatMap(([i, j]) =>
+  const cands = cells.flatMap(([i, j]) =>
     ops.map((op) => {
       const fwd = compose(translateXy(i, j), op);
       return { fwd, inv: invert(fwd) };
     }),
   );
+  candidatesCache.set(group, cands);
+  return cands;
 };
 
 // Index of the candidate copy containing p (−1 if none). `sticky` is re-tested first so

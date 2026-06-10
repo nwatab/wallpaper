@@ -4,6 +4,7 @@ import { applyToPoint, basisToMatrix, compose, invert } from '../affine';
 import { asymmetricUnitUv } from '../regions';
 import { tile } from '../engine/tile';
 import { placeUserMotif } from '../switch/shapeFamilies';
+import { buildCanvasMapping } from './canvasMapping';
 import {
   foldFillUv,
   foldShapeUv,
@@ -160,17 +161,36 @@ describe('foldShapeUv', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('candidate coverage (no silent drops)', () => {
-  it('covers a dense grid over the cell + draw-window margin for every group', () => {
-    // The square canvas centres the unit's bbox, so a skinny bbox (pm: 0.5×1) leaves
-    // slack margins up to (360−28·2−s·short)/2 ≈ 0.35 uv around the bbox — all of it
-    // drawable. Scan the cell plus that worst-case margin. This grid found the cmm
-    // corner holes that forced LATTICE_WINDOW = 2 (engine TILE_OVERSCAN parity).
+  // Mirrors DrawPane's CANVAS — only sets how far past the bbox the scan reaches; the
+  // scan range itself is DERIVED per group from the actual capture mapping below.
+  const CANVAS = { width: 360, height: 360, padding: 28 };
+
+  it('covers the cell plus each group’s actual reachable canvas window', () => {
+    // Every uv point a pointer can produce is a corner-bounded image of the canvas
+    // rect under toUv = (toCanvas ∘ B)⁻¹ — derive the scan range from those corners
+    // (∪ the cell) instead of asserting a hand-computed margin. At ±1 this scan found
+    // reachable holes for cmm, p3, p6, p31m (origin-throw ops need translate ±2,
+    // engine TILE_OVERSCAN parity) — LATTICE_WINDOW = 2 closes them.
     const groups = Object.keys(asymmetricUnitUv) as WallpaperGroup[];
     for (const group of groups) {
+      const t = placeUserMotif(group, {}).template;
+      const mapping = buildCanvasMapping(t.regionXy, CANVAS);
+      const pxToUv = invert(compose(mapping.toCanvas, basisToMatrix(t.basis)));
+      const corners: Vec2[] = [
+        { x: 0, y: 0 },
+        { x: CANVAS.width, y: 0 },
+        { x: CANVAS.width, y: CANVAS.height },
+        { x: 0, y: CANVAS.height },
+      ].map((p) => applyToPoint(pxToUv, p));
+      const xMin = Math.min(0, ...corners.map((p) => p.x)) - 0.02;
+      const xMax = Math.max(1, ...corners.map((p) => p.x)) + 0.02;
+      const yMin = Math.min(0, ...corners.map((p) => p.y)) - 0.02;
+      const yMax = Math.max(1, ...corners.map((p) => p.y)) + 0.02;
+
       const cands = regionCandidatesUv(group);
       const holes: string[] = [];
-      for (let x = -0.36; x <= 1.36; x += 0.01) {
-        for (let y = -0.36; y <= 1.36; y += 0.01) {
+      for (let x = xMin; x <= xMax; x += 0.01) {
+        for (let y = yMin; y <= yMax; y += 0.01) {
           const covered = cands.some((c) =>
             insideRegion(applyToPoint(c.inv, { x, y }), group),
           );
@@ -230,15 +250,29 @@ describe('fold model ≡ engine orbit (renderer bridge)', () => {
         ).toBe(true);
       }
 
-      // the renderer's clip polygon (renderMotifLayer: B⁻¹ · regionXy) is the unit
+      // the renderer's clip polygon (renderMotifLayer: B⁻¹ · regionXy) is the unit —
+      // compared as a vertex set + equal area, so vertex order / winding stay free
       const Binv = invert(B);
       const clipUv = regionXy.map((p) => applyToPoint(Binv, p));
       const unit = asymmetricUnitUv[group];
       expect(clipUv).toHaveLength(unit.length);
-      clipUv.forEach((p, i) => {
-        expect(p.x, `${group} clip vertex ${i}.x`).toBeCloseTo(unit[i].x, 9);
-        expect(p.y, `${group} clip vertex ${i}.y`).toBeCloseTo(unit[i].y, 9);
-      });
+      const used = new Set<number>();
+      for (const p of clipUv) {
+        const i = unit.findIndex(
+          (q, k) =>
+            !used.has(k) && Math.hypot(p.x - q.x, p.y - q.y) < 1e-9,
+        );
+        expect(i, `${group}: clip vertex (${p.x},${p.y}) not a unit vertex`).toBeGreaterThanOrEqual(0);
+        used.add(i);
+      }
+      const area = (poly: Vec2[]): number =>
+        Math.abs(
+          poly.reduce((s, p, i) => {
+            const q = poly[(i + 1) % poly.length];
+            return s + (p.x * q.y - q.x * p.y);
+          }, 0) / 2,
+        );
+      expect(area(clipUv), `${group} clip area`).toBeCloseTo(area(unit), 12);
     }
   });
 });

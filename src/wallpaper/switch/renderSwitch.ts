@@ -1,6 +1,8 @@
 import type { Affine2D, DebugOptions, Pose, Rect, Scene, UnitTemplate, WallpaperGroup } from '../types';
 import { tile } from '../engine/tile';
-import { basisToMatrix, compose, invert, rotateDeg, scaleUniform } from '../affine';
+import { basisToMatrix, compose, invert, rotateDeg, scaleUniform, toSvgMatrix } from '../affine';
+import { toSVG } from '@/lib/coords/surfaces';
+import { extentCenter, viewTransform } from '@/lib/coords/view';
 import type { GalleryMotif } from '../galleryMotifs';
 import { renderMotifLayer, renderOverlayLayer } from '../engine/render';
 import { placeUserMotif, renderableByGroup } from './shapeFamilies';
@@ -30,6 +32,11 @@ const renderTemplateSvg = (args: {
   pose: Pose;
   debugOptions?: DebugOptions;
   showSymmetryElements?: boolean;
+  // Center the viewBox on the displayed extent (coords/ view stage) — true for the main
+  // wallpaper view (matches the gallery, gives the conformal layer 0 at centre). The
+  // draw-pane preview passes false: its pointer↔uv mapping is canvas-pixel based and
+  // independent of the viewBox, so it stays a top-left box to keep input aligned.
+  centered?: boolean;
 }): string => {
   const pose = args.pose;
 
@@ -70,17 +77,40 @@ const renderTemplateSvg = (args: {
     ? renderSymmetryElements({ opsInCellXy, basis, poseMatrix, tilePositions, viewBox })
     : '';
 
-  return `
+  const inner = `${motif.defs ? `<defs>${motif.defs}</defs>` : ''}
+      <g data-layer="motif">${motif.body}</g>
+      ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
+      ${symmetry}`;
+
+  if (!args.centered) {
+    return `
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}"
       width="${viewBox.w}"
       height="${viewBox.h}"
     >
+      ${inner}
+    </svg>
+  `.trim();
+  }
+
+  const surface = toSVG({ w: viewBox.w, h: viewBox.h });
+  const view = compose(surface.forward, viewTransform({ center: extentCenter(viewBox) }));
+  const vb = surface.viewBox;
+  return `
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="${vb.x} ${vb.y} ${vb.w} ${vb.h}"
+      width="${vb.w}"
+      height="${vb.h}"
+    >
       ${motif.defs ? `<defs>${motif.defs}</defs>` : ''}
-      <g data-layer="motif">${motif.body}</g>
-      ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
-      ${symmetry}
+      <g data-layer="view" transform="${toSvgMatrix(view)}">
+        <g data-layer="motif">${motif.body}</g>
+        ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
+        ${symmetry}
+      </g>
     </svg>
   `.trim();
 };
@@ -115,6 +145,7 @@ export const renderGroupSvg = (args: {
     pose,
     debugOptions: args.debugOptions,
     showSymmetryElements: args.showSymmetryElements,
+    centered: true, // main wallpaper view — matches the gallery's centred viewBox
   });
 };
 
@@ -162,6 +193,7 @@ export const renderRegionPreview = (args: {
     pose,
     debugOptions: args.debugOptions,
     showSymmetryElements: args.showSymmetryElements,
+    centered: false, // draw-pane preview: top-left box keeps the canvas-pixel pointer map aligned
   });
   return {
     svg,

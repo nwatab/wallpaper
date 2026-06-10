@@ -22,6 +22,10 @@ import {
 import { cellFromTemplate, cellFromGroup } from '@/wallpaper/export/exportSvg';
 import type { Card } from '@/wallpaper/conformal/primitives';
 import { PRESETS, DEFAULT_PRESET_ID } from '@/wallpaper/conformal/presets';
+import {
+  toInternalViewAngleDeg,
+  toUserViewAngleDeg,
+} from '@/lib/coords/canonical';
 import { downloadSvg } from './downloadSvg';
 import DrawPane from './DrawPane';
 import WarpPane from './WarpPane';
@@ -619,15 +623,22 @@ export default function Page() {
           <label className="flex flex-col gap-1.5">
             <div className="flex justify-between items-center">
               <span className="text-xs opacity-80">Rotation</span>
-              <span className="text-xs opacity-60 tabular-nums">{rotationDeg}°</span>
+              <span className="text-xs opacity-60 tabular-nums">
+                {toUserViewAngleDeg(rotationDeg)}°
+              </span>
             </div>
+            {/* The control is CCW-positive (coords/canonical). `rotationDeg` state stays in
+                the engine's internal convention; only this slider relabels it, so every
+                render path (and overlapDepth) is unchanged. See toInternalViewAngleDeg. */}
             <input
               type="range"
               min={0}
               max={345}
               step={15}
-              value={rotationDeg}
-              onChange={(e) => setRotationDeg(Number(e.target.value))}
+              value={toUserViewAngleDeg(rotationDeg)}
+              onChange={(e) =>
+                setRotationDeg(toInternalViewAngleDeg(Number(e.target.value)))
+              }
               className="w-full cursor-pointer accent-white"
             />
           </label>

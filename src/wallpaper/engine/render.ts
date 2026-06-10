@@ -10,6 +10,8 @@ import {
   rotateDeg,
   basisToMatrix,
 } from '../affine';
+import { toSVG } from '@/lib/coords/surfaces';
+import { extentCenter, viewTransform } from '@/lib/coords/view';
 
 const pointsToPathD = (pts: Vec2[]): string => {
   if (pts.length === 0) return '';
@@ -228,16 +230,27 @@ export function renderSvg(
     },
   );
 
+  // VIEW STAGE (coords/): recenter the displayed extent's centre onto canonical 0 and
+  // emit a centred viewBox. Output-preserving (same pixels as the old top-left box) and
+  // the insertion point for the future conformal layer (0 at the viewport centre). The
+  // recenter wraps motif + overlay as one <g> so clips (userSpaceOnUse, an ancestor
+  // transform) stay aligned with their content.
+  const surface = toSVG({ w: viewBox.w, h: viewBox.h });
+  const view = compose(surface.forward, viewTransform({ center: extentCenter(viewBox) }));
+  const vb = surface.viewBox;
+
   const svg = `
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}"
-      width="${viewBox.w}"
-      height="${viewBox.h}"
+      viewBox="${vb.x} ${vb.y} ${vb.w} ${vb.h}"
+      width="${vb.w}"
+      height="${vb.h}"
     >
       ${motif.defs ? `<defs>${motif.defs}</defs>` : ''}
-      <g data-layer="motif">${motif.body}</g>
-      ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
+      <g data-layer="view" transform="${toSvgMatrix(view)}">
+        <g data-layer="motif">${motif.body}</g>
+        ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
+      </g>
     </svg>
   `.trim();
 

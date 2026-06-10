@@ -209,8 +209,44 @@ const galleryTemplates: UnitTemplate[] = gallerySpecs.map((spec) => ({
   defaultPose: { scale: 120, rotationDeg: 0 },
 }));
 
+// DEV-ONLY warp probe (only under `next dev`, so Vitest/prod are unaffected): the chiral F
+// (motif-dev-f) on a PURE-TRANSLATION lattice (group p1 → one glyph per cell, no reflection/
+// rotation), so the warp E2E guards can tile it and read the full gallery→warp affine D + its
+// chirality. Three lattices: rectangular control, oblique p1 70°, hex 60°.
+// Defined INSIDE the dev-only branch (IIFE) so the whole block — glyph templates and the
+// 'motif-dev-f' reference — is dead-code-eliminated from the production bundle, not merely
+// left unspread. Verified absent from `.next` prod chunks (warp-affine-D / prod-grep).
+const buildDevGlyphTemplates = (): UnitTemplate[] => {
+  const C70 = Math.cos((70 * Math.PI) / 180);
+  const S70 = Math.sin((70 * Math.PI) / 180);
+  const lattices: { tag: string; suffix: string; basis: { a: Vec2; b: Vec2 } }[] = [
+    { tag: 'rect', suffix: 'rect', basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } } },
+    { tag: 'p1-70', suffix: 'p1 70', basis: { a: { x: 1, y: 0 }, b: { x: C70, y: S70 } } },
+    { tag: 'hex-60', suffix: 'hex 60', basis: { a: { x: 1, y: 0 }, b: { x: 0.5, y: S3_2 } } },
+  ];
+  // The chiral F (direction/flip-axis probe) on the same three lattices — the fixture the warp
+  // E2E guards (warp-affine-D, warp-flip-axis) tile and compare gallery↔warp. Dev-gated, so it
+  // never appears in the production gallery.
+  const glyphs: { idPrefix: string; labelPrefix: string; motifId: string }[] = [
+    { idPrefix: 'dev-glyph-f', labelPrefix: 'DEV F', motifId: 'motif-dev-f' },
+  ];
+  return glyphs.flatMap((g) =>
+    lattices.map((l) => ({
+      id: `${g.idPrefix}-${l.tag}`,
+      group: 'p1' as const,
+      label: `${g.labelPrefix} ${l.suffix}`,
+      basis: l.basis,
+      regionXy: applyToPolygon(basisToMatrix(l.basis), asymmetricUnitUv.p1),
+      motifId: g.motifId,
+      defaultPose: { scale: 120, rotationDeg: 0 },
+    })),
+  );
+};
+
 export const unitTemplates: UnitTemplate[] = [
   ...designTemplates,
   ...coverageTemplates,
   ...galleryTemplates,
+  // Appended LAST so unitTemplates[0] (the default selection) is unchanged.
+  ...(process.env.NODE_ENV === 'development' ? buildDevGlyphTemplates() : []),
 ];

@@ -122,16 +122,20 @@ describe('tileable SVG', () => {
     });
   }
 
-  it('clip motif stamps exactly one cell period — one copy per coset op, no supercell', () => {
+  it('clip motif bakes the 3×3 neighbourhood and clips to the unit cell (one period, no supercell)', () => {
     const template = templateById('gen-p4-cracked-ice');
     const { opsInCellXy } = tile({
       template,
       viewport: VIEW,
       pose: { scale: 1, rotationDeg: 0 },
     });
-    // gallery motifs contain no matrix() of their own, so each matrix transform is one copy.
     const out = tileableFromTemplate(template);
-    expect(countMatrixGroups(out)).toBe(opsInCellXy.length);
+    expect(out).toContain('clip-path="url(#cell-clip)"');
+    // 3×3 cells × coset ops: the neighbour wrap fills the whole cell so translation-tiling
+    // reproduces the full group (essential for centred lattices; harmless here — primitive
+    // lattice neighbours fall outside the cell-clip). Gallery motifs have no matrix() of their
+    // own, so matrix groups count the stamps exactly.
+    expect(countMatrixGroups(out)).toBe(9 * opsInCellXy.length);
   });
 
   it('overlap motif bakes the 3×3 neighbourhood and clips to the unit cell (seigaiha)', () => {

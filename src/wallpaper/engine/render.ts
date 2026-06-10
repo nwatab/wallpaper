@@ -6,6 +6,8 @@ import {
   compose,
   translateXy,
   invert,
+  identity,
+  rotateDeg,
   basisToMatrix,
 } from '../affine';
 
@@ -93,10 +95,19 @@ export function createDebugPaths(args: {
   return debugPaths;
 }
 
-// On-screen depth of a copy's motif centre. Pose is already folded into `transform`,
-// so this is the final viewport-space y: larger y (lower on screen) paints last.
-const motifCentreDepth = (transform: Affine2D): number =>
-  applyToPoint(transform, { x: 0.5, y: 0.5 }).y;
+const MOTIF_CENTRE: Vec2 = { x: 0.5, y: 0.5 };
+
+// Painter's-order depth of an overlap copy, in the pattern's INTRINSIC recede frame: the y of
+// the copy's motif centre after rotating to the design orientation (depthRotationDeg, from the
+// template's defaultPose). This is POSE-INDEPENDENT by construction and the SINGLE source of
+// overlap order — shared with the seamless-cell baking (exportSvg.buildCellLayers) so the
+// gallery and the warped cell stack identically. At a template's default pose it is
+// order-equivalent to the old screen-y sort (uniform scale + that rotation is a positive-affine
+// map of this), so the on-screen look is unchanged; it only fixes stacking under other
+// rotations and, crucially, in the baked cell that the warp tiles. centreXy is the CANONICAL
+// (pose-stripped) motif centre in XY.
+export const overlapDepth = (centreXy: Vec2, depthRotationDeg = 0): number =>
+  applyToPoint(rotateDeg(depthRotationDeg), centreXy).y;
 
 // A deterministic id derived from the clip region's path. Many of these SVGs share one
 // HTML document (the full wallpaper plus a grid of gallery swatches), and duplicate
@@ -121,13 +132,23 @@ const djb2 = (s: string): string => {
  *   default   → orbit order, as authored.
  * Returns the layer body plus any <defs> (clip paths) it depends on.
  */
-export function renderMotifLayer(scene: Scene): { defs: string; body: string } {
+export function renderMotifLayer(
+  scene: Scene,
+  poseMatrix?: Affine2D,
+): { defs: string; body: string } {
   const { orbitElements, motifSvg, motifLayer, basis, regionXy } = scene;
 
   if (motifLayer === 'overlap') {
-    const ordered = [...orbitElements].sort(
-      (p, q) => motifCentreDepth(p.transform) - motifCentreDepth(q.transform),
-    );
+    // Strip the pose to recover each copy's CANONICAL motif centre, then sort by the intrinsic
+    // recede depth — pose-independent and identical to the cell baking's key.
+    const poseInv = poseMatrix ? invert(poseMatrix) : identity();
+    const depthRot = scene.depthRotationDeg ?? 0;
+    const depthOf = (el: (typeof orbitElements)[number]): number =>
+      overlapDepth(
+        applyToPoint(poseInv, applyToPoint(el.transform, MOTIF_CENTRE)),
+        depthRot,
+      );
+    const ordered = [...orbitElements].sort((p, q) => depthOf(p) - depthOf(q));
     const body = ordered
       .map((el) => `<g transform="${toSvgMatrix(el.transform)}">${motifSvg}</g>`)
       .join('\n');
@@ -197,7 +218,7 @@ export function renderSvg(
 ): string {
   const { viewBox } = scene;
 
-  const motif = renderMotifLayer(scene);
+  const motif = renderMotifLayer(scene, debugData?.poseMatrix);
   const overlay = renderOverlayLayer(
     debugOptions,
     debugData && {

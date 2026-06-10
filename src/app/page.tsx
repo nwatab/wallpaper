@@ -19,14 +19,26 @@ import {
   tileableExportSvg,
   type ExportState,
 } from '@/wallpaper/export/exportSvg';
+import { cellFromTemplate, cellFromGroup } from '@/wallpaper/export/exportSvg';
+import type { Card } from '@/wallpaper/conformal/primitives';
+import { PRESETS, DEFAULT_PRESET_ID } from '@/wallpaper/conformal/presets';
 import { downloadSvg } from './downloadSvg';
 import DrawPane from './DrawPane';
+import WarpPane from './WarpPane';
+import WarpControls from './WarpControls';
 
 const hasInk = (m: GalleryMotif): boolean =>
   (m.fills?.length ?? 0) > 0 || (m.strokes?.length ?? 0) > 0;
 
 const DEFAULT_SCALE = 120;
 const DEFAULT_ROTATION_DEG = 0;
+
+// Scale/Rotation are GLOBAL VIEW STATE — initialised once, never reset by a selection or mode
+// change. "Reset view" returns to these. (First template's defaultPose, falling back to the
+// module defaults.)
+const INITIAL_SCALE = unitTemplates[0]?.defaultPose?.scale ?? DEFAULT_SCALE;
+const INITIAL_ROTATION_DEG =
+  unitTemplates[0]?.defaultPose?.rotationDeg ?? DEFAULT_ROTATION_DEG;
 
 type Size = { width: number; height: number };
 
@@ -65,7 +77,25 @@ export default function Page() {
     return '';
   }, [sections]);
 
-  const [mode, setMode] = useState<'gallery' | 'switch' | 'draw'>('gallery');
+  // Stage 1: pattern SELECTION — three ways to pick the base wallpaper (persists across the
+  // Warp stage so Warp can inherit whichever is active).
+  const [selectionMode, setSelectionMode] = useState<'gallery' | 'switch' | 'draw'>(
+    'gallery',
+  );
+  // Stage 2: WARP — the downstream raster stage. Not a 4th selection peer: it warps the base
+  // chosen upstream. The effective render mode is the selection mode unless Warp is active.
+  const [warpActive, setWarpActive] = useState(false);
+  const mode = warpActive ? 'warp' : selectionMode;
+  // Warp (M4): the conformal pipeline — an ordered list of primitive cards. Default = the
+  // Inversion preset (a single Möbius card), preserving the original single-map behaviour.
+  const [pipeline, setPipeline] = useState<Card[]>(() =>
+    (PRESETS.find((p) => p.id === DEFAULT_PRESET_ID)?.cards ?? []).map((c) => ({
+      ...c,
+    })),
+  );
+  // Debug: overlay the warp's lattice basis frame so any shear/rotation/reflection vs the
+  // gallery shows directly as the pattern diverging from the drawn a/b vectors.
+  const [showLatticeFrame, setShowLatticeFrame] = useState(false);
   const [selectedId, setSelectedId] = useState(unitTemplates[0]?.id ?? '');
   const [switchGroup, setSwitchGroup] = useState<string>(firstToggleGroup);
   // The user's drawing (M2), stored in the toggle-set REFERENCE frame so it survives a
@@ -126,12 +156,12 @@ export default function Page() {
     );
   }, [userMotif, switchGroup]);
 
-  const [scale, setScale] = useState(
-    unitTemplates[0]?.defaultPose?.scale ?? DEFAULT_SCALE,
-  );
-  const [rotationDeg, setRotationDeg] = useState(
-    unitTemplates[0]?.defaultPose?.rotationDeg ?? DEFAULT_ROTATION_DEG,
-  );
+  const [scale, setScale] = useState(INITIAL_SCALE);
+  const [rotationDeg, setRotationDeg] = useState(INITIAL_ROTATION_DEG);
+  const resetView = () => {
+    setScale(INITIAL_SCALE);
+    setRotationDeg(INITIAL_ROTATION_DEG);
+  };
 
   const selectedTemplate = useMemo(() => {
     const t = unitTemplates.find((x) => x.id === selectedId);
@@ -154,12 +184,9 @@ export default function Page() {
     return map;
   }, []);
 
-  const handleTemplateChange = (id: string) => {
-    const template = unitTemplates.find((t) => t.id === id);
-    setSelectedId(id);
-    setScale(template?.defaultPose?.scale ?? DEFAULT_SCALE);
-    setRotationDeg(template?.defaultPose?.rotationDeg ?? DEFAULT_ROTATION_DEG);
-  };
+  // Selecting a template no longer resets the view — Scale/Rotation are global and stay under
+  // user control across selections and the Warp stage (use "Reset view" to return to defaults).
+  const handleTemplateChange = (id: string) => setSelectedId(id);
 
   // 壁紙は「全画面レイヤー」のサイズで計測する
   const [wallRef, wallSize] = useElementSize<HTMLDivElement>();
@@ -174,7 +201,33 @@ export default function Page() {
     [regionDisplay, bravaisDisplay],
   );
 
+  // Warp texture source: the seamless cell + basis of WHATEVER the active selection mode has
+  // chosen — gallery template, switcher group, or the draw user motif. One resolver, so the
+  // Warp stage always reflects the upstream base and re-rasterises when it changes.
+  const warpCell = useMemo(() => {
+    if (!warpActive) return null;
+    const opts = { background: 'white' as const, targetPx: 1024 };
+    if (selectionMode === 'gallery') {
+      return selectedTemplate ? cellFromTemplate(selectedTemplate, opts) : null;
+    }
+    if (!switchGroup) return null;
+    const motif = selectionMode === 'draw' ? userMotif : undefined;
+    return cellFromGroup(switchGroup, motif, opts);
+  }, [warpActive, selectionMode, selectedTemplate, switchGroup, userMotif]);
+
+  // What the Warp stage is warping, shown instead of a (removed) picker — the base is chosen
+  // upstream in Stage 1; Warp only reflects it.
+  const warpBaseLabel = useMemo(() => {
+    if (selectionMode === 'gallery')
+      return selectedTemplate
+        ? `${selectedTemplate.group} · ${selectedTemplate.label}`
+        : '—';
+    if (selectionMode === 'draw') return `${switchGroup} · your drawing`;
+    return `${switchGroup} · group default`;
+  }, [selectionMode, selectedTemplate, switchGroup]);
+
   const svg = useMemo(() => {
+    if (mode === 'warp') return '';
     if (wallSize.width <= 0 || wallSize.height <= 0) return '';
     const viewport = { x: 0, y: 0, width: wallSize.width, height: wallSize.height };
 
@@ -230,14 +283,18 @@ export default function Page() {
   // The group label baked into export filenames (gallery → template's group; otherwise the
   // switcher/draw group).
   const exportGroup =
-    mode === 'gallery' ? selectedTemplate?.group ?? 'wallpaper' : switchGroup;
+    selectionMode === 'gallery'
+      ? selectedTemplate?.group ?? 'wallpaper'
+      : switchGroup;
 
   // One ExportState feeds both download buttons; each button invokes its own pure action
   // (snapshotExportSvg / tileableExportSvg), so the wiring can't silently swap.
   const exportState: ExportState = {
     displaySvg: svg,
     includeGuides,
-    mode,
+    // Warp output is raster (conformal export = PNG, deferred); the SVG export panel is
+    // hidden in that stage, so the SVG-export mode is simply the active selection mode.
+    mode: selectionMode,
     template: selectedTemplate,
     group: switchGroup,
     motif: mode === 'draw' ? userMotif : undefined,
@@ -269,10 +326,23 @@ export default function Page() {
         id="wallpaper"
         className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
       >
-        <div
-          className="w-full h-full select-none"
-          dangerouslySetInnerHTML={{ __html: svg }}
-        />
+        {mode === 'warp' ? (
+          warpCell ? (
+            <WarpPane
+              cellSvg={warpCell.cellSvg}
+              basis={warpCell.basis}
+              cards={pipeline}
+              scale={scale}
+              rotationDeg={rotationDeg}
+              showLattice={showLatticeFrame}
+            />
+          ) : null
+        ) : (
+          <div
+            className="w-full h-full select-none"
+            dangerouslySetInnerHTML={{ __html: svg }}
+          />
+        )}
       </div>
 
       {/* Mobile: hamburger to show/hide the side panel (hidden on md+, where the panel is
@@ -296,25 +366,46 @@ export default function Page() {
         <div className="flex flex-col gap-3">
           <div className="text-sm opacity-90">Wallpaper</div>
 
-          {/* Mode toggle: browse the gallery, keep one motif and switch its group, or
-              draw your own motif and watch it tile under the group. */}
+          {/* Stage 1 — pattern SELECTION: browse the gallery, keep one motif and switch its
+              group, or draw your own motif and watch it tile under the group. */}
           <div className="grid grid-cols-3 gap-1.5">
-            {(['gallery', 'switch', 'draw'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                aria-pressed={mode === m}
-                className={`rounded-md px-2 py-1.5 text-xs transition-colors ${
-                  mode === m
-                    ? 'bg-white/90 text-black'
-                    : 'bg-white/10 text-white/80 hover:bg-white/20'
-                }`}
-              >
-                {m === 'gallery' ? 'Gallery' : m === 'switch' ? 'Switcher' : 'Draw'}
-              </button>
-            ))}
+            {(['gallery', 'switch', 'draw'] as const).map((m) => {
+              const active = !warpActive && selectionMode === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setSelectionMode(m);
+                    setWarpActive(false);
+                  }}
+                  aria-pressed={active}
+                  className={`rounded-md px-2 py-1.5 text-xs transition-colors ${
+                    active
+                      ? 'bg-white/90 text-black'
+                      : 'bg-white/10 text-white/80 hover:bg-white/20'
+                  }`}
+                >
+                  {m === 'gallery' ? 'Gallery' : m === 'switch' ? 'Switcher' : 'Draw'}
+                </button>
+              );
+            })}
           </div>
+
+          {/* Stage 2 — WARP: a downstream raster stage, not a 4th selection. It warps the base
+              chosen above (vector SVG → WebGL raster); set apart with an arrow + divider. */}
+          <button
+            type="button"
+            onClick={() => setWarpActive(true)}
+            aria-pressed={warpActive}
+            className={`rounded-md px-2 py-1.5 text-xs transition-colors flex items-center justify-center gap-1.5 ${
+              warpActive
+                ? 'bg-white/90 text-black'
+                : 'bg-white/10 text-white/80 hover:bg-white/20'
+            }`}
+          >
+            <span className="opacity-60">↓</span> Warp
+          </button>
 
           {/* Group switcher / draw: organised by lattice (headed by its maximal group).
               A congruence class with ≥2 members is a same-tile TOGGLE; singletons
@@ -486,6 +577,27 @@ export default function Page() {
           </div>
           )}
 
+          {/* Warp stage: the conformal pipeline editor. Base inherited from Stage 1 (shown,
+              not re-picked); presets + an ordered list of composable transform cards. */}
+          {mode === 'warp' && (
+            <>
+              <WarpControls
+                cards={pipeline}
+                onChange={setPipeline}
+                baseLabel={warpBaseLabel}
+              />
+              <label className="flex items-center gap-2 text-[11px] opacity-80">
+                <input
+                  type="checkbox"
+                  checked={showLatticeFrame}
+                  onChange={(e) => setShowLatticeFrame(e.target.checked)}
+                />
+                Show lattice frame (debug: <span className="text-[#e5484d]">a</span> /{' '}
+                <span className="text-[#3b82f6]">b</span> vectors)
+              </label>
+            </>
+          )}
+
           {/* Scale */}
           <label className="flex flex-col gap-1.5">
             <div className="flex justify-between items-center">
@@ -519,6 +631,17 @@ export default function Page() {
               className="w-full cursor-pointer accent-white"
             />
           </label>
+
+          {/* View is global state (persists across selections + the Warp stage). */}
+          {(scale !== INITIAL_SCALE || rotationDeg !== INITIAL_ROTATION_DEG) && (
+            <button
+              type="button"
+              onClick={resetView}
+              className="self-start rounded-md px-2 py-1 text-[11px] bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
+            >
+              Reset view
+            </button>
+          )}
 
           {/* Advanced Options */}
           <div className="mt-2 bg-white/6 border border-white/10 rounded-lg">
@@ -594,7 +717,7 @@ export default function Page() {
             )}
           </div>
 
-          {mode === 'switch' ? (
+          {mode === 'warp' ? null : mode === 'switch' ? (
             <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 text-xs leading-relaxed">
               <div className="text-xs opacity-85 mb-1.5">Switching</div>
               <div>
@@ -630,7 +753,9 @@ export default function Page() {
             )
           )}
 
-          {/* Export — download the current pattern as a standalone SVG (all modes). */}
+          {/* Export — download the current pattern as a standalone SVG. Hidden in the Warp
+              stage: the warped output is raster (PNG export is a later slice). */}
+          {mode !== 'warp' && (
           <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 flex flex-col gap-2">
             <div className="text-xs opacity-85">Export SVG</div>
             <div className="grid grid-cols-1 gap-1.5">
@@ -666,6 +791,7 @@ export default function Page() {
               Include guides (snapshot only)
             </label>
           </div>
+          )}
 
           {/* GitHub Link */}
           <div className="mt-auto pt-4">

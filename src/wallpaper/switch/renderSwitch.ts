@@ -58,7 +58,7 @@ const renderTemplateSvg = (args: {
     motifLayer: 'clip',
   };
 
-  const motif = renderMotifLayer(scene);
+  const motif = renderMotifLayer(scene, poseMatrix);
   const overlay = renderOverlayLayer(args.debugOptions, {
     opsInCellXy,
     poseMatrix,

@@ -1,6 +1,7 @@
 import { UnitTemplate, Vec2, WallpaperGroup } from './types';
 import { basisToMatrix, applyToPolygon } from './affine';
 import { asymmetricUnitUv } from './regions';
+import { FLEUR_BASIS, TAPA_BASIS } from './galleryMotifs';
 
 const S3_2 = Math.sqrt(3) / 2; // sin(60°) = √3/2
 
@@ -196,6 +197,17 @@ const gallerySpecs: {
   { id: 'gen-p4g-pinwheel', group: 'p4g', label: 'Pinwheel pavement', motifId: 'p4g-pinwheel', basis: SQUARE },
   { id: 'gen-p3-trefoil', group: 'p3', label: 'Seljuk trefoil knot', motifId: 'p3-trefoil-knot', basis: HEX120 },
   { id: 'gen-p31m-medallion', group: 'p31m', label: 'Three-petal medallion', motifId: 'p31m-medallion', basis: HEX120 },
+  // Second design per single-entry group, after the example plates of Wikipedia's
+  // "Wallpaper group" article (see galleryMotifs.ts #10–#16). The two oblique bases
+  // are deliberately generic (|a| ≠ |b|) so no reflection/rotation beyond the
+  // declared group is even an isometry of the lattice.
+  { id: 'gen-p1-fleur-diaper', group: 'p1', label: 'Fleur-de-lis diaper', motifId: 'p1-fleur-diaper', basis: FLEUR_BASIS },
+  { id: 'gen-p2-tapa', group: 'p2', label: 'Tapa cloth zigzag', motifId: 'p2-tapa-zigzag', basis: TAPA_BASIS },
+  { id: 'gen-pm-lotus', group: 'pm', label: 'Egyptian lotus columns', motifId: 'pm-lotus-columns', basis: SQUARE },
+  { id: 'gen-pg-herringbone', group: 'pg', label: 'Herringbone parquet', motifId: 'pg-herringbone', basis: SQUARE },
+  { id: 'gen-pmg-water-bands', group: 'pmg', label: 'Egyptian water bands', motifId: 'pmg-water-bands', basis: SQUARE },
+  { id: 'gen-pgg-yagasuri', group: 'pgg', label: 'Yagasuri arrow feathers', motifId: 'pgg-yagasuri', basis: SQUARE },
+  { id: 'gen-p3m1-glazed', group: 'p3m1', label: 'Persian glazed triangles', motifId: 'p3m1-glazed-rosette', basis: HEX120 },
 ];
 
 const galleryTemplates: UnitTemplate[] = gallerySpecs.map((spec) => ({

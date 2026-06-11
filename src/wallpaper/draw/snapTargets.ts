@@ -120,7 +120,10 @@ export const snapTargetsUv = (args: {
   window: UvWindow;
 }): SnapTargets => {
   const { group, basis, window } = args;
-  const key = `${group}:${pointKey(window.min)}:${pointKey(window.max)}`;
+  // The basis is part of the key: today it is unique per group, but lattice-parameter
+  // editing (L2) will vary it, and a stale hit would hand back targets derived from
+  // another basis' numerics. Same discipline as regionCandidatesUv's (group, window) key.
+  const key = `${group}:${pointKey(basis.a)}:${pointKey(basis.b)}:${pointKey(window.min)}:${pointKey(window.max)}`;
   const hit = cache.get(key);
   if (hit) return hit;
 

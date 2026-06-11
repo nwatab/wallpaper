@@ -78,6 +78,21 @@ describe('snapTargetsUv', () => {
   });
 });
 
+describe('snapTargetsUv memoisation', () => {
+  it('keys the cache by basis as well as (group, window)', () => {
+    const basis = placeUserMotif('p1', {}).template.basis;
+    const scaled = {
+      a: { x: basis.a.x * 2, y: basis.a.y * 2 },
+      b: { x: basis.b.x * 2, y: basis.b.y * 2 },
+    };
+    const t1 = snapTargetsUv({ group: 'p1', basis, window: WINDOW });
+    const t2 = snapTargetsUv({ group: 'p1', basis: scaled, window: WINDOW });
+    const t3 = snapTargetsUv({ group: 'p1', basis, window: WINDOW });
+    expect(t1).toBe(t3); // same args ⇒ cache hit
+    expect(t1).not.toBe(t2); // different basis ⇒ its own derivation
+  });
+});
+
 describe('snapToTargets', () => {
   // 100 px per uv unit, no skew — px distances are uv distances × 100.
   const toCanvas = { a: 100, b: 0, c: 0, d: 100, e: 0, f: 0 };

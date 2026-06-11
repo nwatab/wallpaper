@@ -63,11 +63,11 @@ export const withBackground = (
 };
 
 // The teaching-overlay layers, identified by their <g data-layer> markers. Keying on the
-// MARKERS (not colours) is deliberate (correction #1): the overlay colours collide with
-// motif colours — the symmetry-axis red is the motif accent (#b5402a), and the Bravais navy
-// is the cobalt-ink family (#1c3f7a) — so "string contains no navy" would false-fail on any
-// pattern that uses them. Each overlay <g> contains only <path>/<line>/<circle> (no nested
-// <g>), so a non-greedy match to the first </g> is exact.
+// MARKERS (not colours) is deliberate (correction #1): overlay colours may collide with
+// motif colours — e.g. the Bravais navy is the cobalt-ink family (#1c3f7a) — so "string
+// contains no navy" would false-fail on any pattern that uses them. Each overlay <g>
+// contains only <path>/<line>/<circle>/<polygon> (no nested <g>), so a non-greedy match
+// to the first </g> is exact.
 const OVERLAY_LAYERS = ['overlay', 'symmetry-elements'] as const;
 
 /** Strip the teaching overlays so the export is the PATTERN only. */

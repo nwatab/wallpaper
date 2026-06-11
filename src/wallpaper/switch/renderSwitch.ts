@@ -74,7 +74,7 @@ const renderTemplateSvg = (args: {
     regionXy,
   });
   const symmetry = args.showSymmetryElements
-    ? renderSymmetryElements({ opsInCellXy, basis, poseMatrix, tilePositions, viewBox })
+    ? renderSymmetryElements({ opsInCellXy, basis, poseMatrix, viewBox })
     : '';
 
   const inner = `${motif.defs ? `<defs>${motif.defs}</defs>` : ''}

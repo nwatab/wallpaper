@@ -12,9 +12,10 @@ import {
 //
 // Draws the CELL STRUCTURE on top of the rendered pattern so the p3m1-vs-p31m (and
 // p4m-vs-p4g) distinction is visible: mirror lines (solid), glide lines (dashed), and
-// rotation centres (dots, highest order emphasised). With these on screen you can SEE
-// that p3m1 puts every highest-order rotation centre on a mirror line while p31m
-// leaves the deep-hole centres off them.
+// rotation centres marked with the Wikipedia cell-diagram glyphs — ◆ 2-fold, ▲ 3-fold,
+// ■ 4-fold, ⬢ 6-fold. With these on screen you can SEE that p3m1 puts every highest-
+// order rotation centre on a mirror line while p31m leaves the deep-hole centres off
+// them.
 //
 // All geometry is derived locally from the XY coset ops (opsInCellXy) the engine
 // already computed — this module reads them, it does not touch groups.ts or
@@ -97,20 +98,90 @@ const latticeVec = (basis: Basis, i: number, j: number): Vec2 => ({
 
 const num = (x: number): string => Number(x.toFixed(3)).toString();
 
+// ── Cell enumeration ─────────────────────────────────────────────────────────
+// A symmetry element of the translated op T_t∘g does NOT sit at t: a rotation's fixed
+// point is (I−R)⁻¹(t + t_g), and a reflection axis' perpendicular offset is ((t+t_g)·n)/2
+// — the element moves at a FRACTION of the lattice translation (exactly half for 2-fold
+// centres and mirror/glide offsets). The engine's tile range is chosen so the motif
+// TILES cover the viewport, which is therefore too small for the overlay: elements
+// thinned out toward the view corner opposite the XY origin. So each op enumerates its
+// own range by inverting its position map over the viewport corners: t = M·e − t_g with
+// M = I−R for rotations and M = 2I for reflections.
+const cellsFor = (
+  cornersXy: Vec2[],
+  toLattice: Affine2D,
+  mapPointToT: (e: Vec2) => Vec2,
+): { i: number; j: number }[] => {
+  const margin = 2; // covers floor/ceil rounding + edge-of-view axis lines
+  const ijs = cornersXy.map((e) => applyLinear(toLattice, mapPointToT(e)));
+  const iMin = Math.floor(Math.min(...ijs.map((q) => q.x))) - margin;
+  const iMax = Math.ceil(Math.max(...ijs.map((q) => q.x))) + margin;
+  const jMin = Math.floor(Math.min(...ijs.map((q) => q.y))) - margin;
+  const jMax = Math.ceil(Math.max(...ijs.map((q) => q.y))) + margin;
+  return Array.from({ length: iMax - iMin + 1 }, (_, di) =>
+    Array.from({ length: jMax - jMin + 1 }, (_, dj) => ({
+      i: iMin + di,
+      j: jMin + dj,
+    })),
+  ).flat();
+};
+
+// Fuchsia — clear of the draw palette (navy/blue/iron-red/green/black) and of both
+// motif families (cobalt ink, iron-red accent), so the overlay never disappears into
+// the pattern or a user drawing.
+const COLOR = '#c026d3';
+
+// Rotation-centre glyphs per the Wikipedia cell-diagram legend: the ORDER is encoded by
+// shape (◆ 2, ▲ 3, ■ 4, ⬢ 6), so one colour suffices. Y-down: "point-up" = −y.
+const ringPoints = (p: Vec2, r: number, n: number, startDeg: number): string =>
+  Array.from({ length: n }, (_, k) => {
+    const a = ((startDeg + (k * 360) / n) * Math.PI) / 180;
+    return `${num(p.x + r * Math.cos(a))},${num(p.y + r * Math.sin(a))}`;
+  }).join(' ');
+
+const markerPoints = (p: Vec2, order: number): string | null => {
+  switch (order) {
+    case 2: // narrow rhombus ◆
+      return [
+        `${num(p.x)},${num(p.y - 7)}`,
+        `${num(p.x + 4.5)},${num(p.y)}`,
+        `${num(p.x)},${num(p.y + 7)}`,
+        `${num(p.x - 4.5)},${num(p.y)}`,
+      ].join(' ');
+    case 3:
+      return ringPoints(p, 8, 3, -90); // ▲ point-up
+    case 4:
+      return ringPoints(p, 7, 4, 45); // ■ axis-aligned
+    case 6:
+      return ringPoints(p, 7, 6, 0); // ⬢ flat-top
+    default:
+      return null;
+  }
+};
+
 /**
  * Build the symmetry-element overlay SVG (one <g>), in world coordinates matching the
- * pattern layer. Mirror lines solid, glide lines dashed, rotation centres as dots with
- * the highest order emphasised.
+ * pattern layer. Mirror lines solid, glide lines dashed, rotation centres as the
+ * Wikipedia glyphs (◆ ▲ ■ ⬢ by order).
  */
 export const renderSymmetryElements = (args: {
   opsInCellXy: Affine2D[];
   basis: Basis;
   poseMatrix: Affine2D;
-  tilePositions: { i: number; j: number }[];
   viewBox: { x: number; y: number; w: number; h: number };
 }): string => {
-  const { opsInCellXy, basis, poseMatrix, tilePositions, viewBox } = args;
+  const { opsInCellXy, basis, poseMatrix, viewBox } = args;
   const reach = 2 * (viewBox.w + viewBox.h); // segment half-length; SVG clips to view
+
+  // Viewport corners in pre-pose XY space — the domain the elements must cover.
+  const poseInv = invert(poseMatrix);
+  const cornersXy = [
+    { x: viewBox.x, y: viewBox.y },
+    { x: viewBox.x + viewBox.w, y: viewBox.y },
+    { x: viewBox.x + viewBox.w, y: viewBox.y + viewBox.h },
+    { x: viewBox.x, y: viewBox.y + viewBox.h },
+  ].map((p) => applyToPoint(poseInv, p));
+  const toLattice = invert(basisToMatrix(basis));
 
   // ── Axes (mirror / glide) ──────────────────────────────────────────────────
   // Classify each translated cell op. The mirror-vs-glide test MUST run on the lattice-
@@ -124,7 +195,11 @@ export const renderSymmetryElements = (args: {
   const seenAxis = new Set<string>();
   for (const op of opsInCellXy) {
     if (!isReflection(op)) continue;
-    for (const { i, j } of tilePositions) {
+    const cells = cellsFor(cornersXy, toLattice, (e) => ({
+      x: 2 * e.x - op.e,
+      y: 2 * e.y - op.f,
+    }));
+    for (const { i, j } of cells) {
       const t = latticeVec(basis, i, j);
       const cellOp = compose(translateXy(t.x, t.y), op);
       const glide = isGlide(cellOp, basis);
@@ -148,22 +223,24 @@ export const renderSymmetryElements = (args: {
 
   // ── Rotation centres ───────────────────────────────────────────────────────
   const centres = new Map<string, { p: Vec2; order: number }>();
-  let maxOrder = 1;
   for (const op of opsInCellXy) {
-    if (!isRotation(op) || rotationOrder(op) === 1) continue;
-    for (const { i, j } of tilePositions) {
+    if (!isRotation(op)) continue;
+    const order = rotationOrder(op);
+    if (order === 1) continue;
+    const cells = cellsFor(cornersXy, toLattice, (e) => ({
+      x: (1 - op.a) * e.x - op.c * e.y - op.e,
+      y: -op.b * e.x + (1 - op.d) * e.y - op.f,
+    }));
+    for (const { i, j } of cells) {
       const t = latticeVec(basis, i, j);
       const cellOp = compose(translateXy(t.x, t.y), op);
       const cWorld = applyToPoint(poseMatrix, rotationCentre(cellOp));
-      const order = rotationOrder(op);
       const key = `${Math.round(cWorld.x / 0.5)},${Math.round(cWorld.y / 0.5)}`;
       const prev = centres.get(key);
       if (!prev || order > prev.order) centres.set(key, { p: cWorld, order });
-      maxOrder = Math.max(maxOrder, order);
     }
   }
 
-  const AXIS = '#b5402a'; // iron-red, distinct from the cobalt motif
   const lineSvg = axes
     .map(({ c, dir, glide }) => {
       const x1 = num(c.x - dir.x * reach);
@@ -171,18 +248,18 @@ export const renderSymmetryElements = (args: {
       const x2 = num(c.x + dir.x * reach);
       const y2 = num(c.y + dir.y * reach);
       const dash = glide ? ' stroke-dasharray="8 6"' : '';
-      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${AXIS}" stroke-width="2" stroke-opacity="0.85"${dash}/>`;
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${COLOR}" stroke-width="2" stroke-opacity="0.85"${dash}/>`;
     })
     .join('');
 
-  const dotSvg = [...centres.values()]
+  const markerSvg = [...centres.values()]
     .map(({ p, order }) => {
-      const top = order === maxOrder;
-      const r = top ? 6 : 4;
-      const fill = top ? AXIS : 'white';
-      return `<circle cx="${num(p.x)}" cy="${num(p.y)}" r="${r}" fill="${fill}" stroke="${AXIS}" stroke-width="2"/>`;
+      const pts = markerPoints(p, order);
+      return pts
+        ? `<polygon points="${pts}" fill="${COLOR}" stroke="white" stroke-width="1.5"/>`
+        : `<circle cx="${num(p.x)}" cy="${num(p.y)}" r="5" fill="${COLOR}" stroke="white" stroke-width="1.5"/>`;
     })
     .join('');
 
-  return `<g data-layer="symmetry-elements">${lineSvg}${dotSvg}</g>`;
+  return `<g data-layer="symmetry-elements">${lineSvg}${markerSvg}</g>`;
 };

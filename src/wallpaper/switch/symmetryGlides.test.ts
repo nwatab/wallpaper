@@ -20,12 +20,6 @@ import type { WallpaperGroup } from '../types';
 // and is just repetitions of each family).
 // ─────────────────────────────────────────────────────────────────────────────
 
-const window = (r: number) => {
-  const out: { i: number; j: number }[] = [];
-  for (let i = -r; i <= r; i++) for (let j = -r; j <= r; j++) out.push({ i, j });
-  return out;
-};
-
 // Distinct axis-family angles (mod π) split by mirror (solid) vs glide (dashed).
 const axisFamilies = (group: WallpaperGroup): { mirrors: number; glides: number } => {
   const basis = storedBasisOf(group);
@@ -42,7 +36,6 @@ const axisFamilies = (group: WallpaperGroup): { mirrors: number; glides: number 
     opsInCellXy: compiled.opsInCellXy,
     basis,
     poseMatrix: { a: 80, b: 0, c: 0, d: 80, e: 200, f: 200 },
-    tilePositions: window(2),
     viewBox: { x: 0, y: 0, w: 400, h: 400 },
   });
 

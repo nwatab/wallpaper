@@ -139,8 +139,10 @@ export default function Page() {
   );
   const [bravaisDisplay, setBravaisDisplay] = useState<'none' | 'all'>('none');
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
-  // Mobile: the side panel slides off-canvas by default and is toggled by the hamburger.
-  // On md+ it is always visible (the toggle is hidden), so this only affects small screens.
+  // Mobile: the side panel collapses into a thin full-height rail at the left edge (no
+  // hamburger). Tapping the rail pops the panel out; tapping the scrim outside tucks it
+  // back. On md+ the panel is always visible (rail/scrim hidden), so this only affects
+  // small screens.
   const [panelOpen, setPanelOpen] = useState(false);
   // Export options. Background defaults to WHITE (patterns like seigaiha rely on the white
   // showing through); transparent is opt-in. "Include guides" applies to the snapshot only —
@@ -362,20 +364,40 @@ export default function Page() {
         )}
       </div>
 
-      {/* Mobile: hamburger to show/hide the side panel (hidden on md+, where the panel is
-          always visible). */}
+      {/* Mobile: the collapsed menu is a thin full-height rail at the left edge. Tapping it
+          pops the panel out; it slides away in sync as the panel slides in. Hidden on md+. */}
       <button
         type="button"
-        onClick={() => setPanelOpen((v) => !v)}
-        aria-label={panelOpen ? 'Hide panel' : 'Show panel'}
+        onClick={() => setPanelOpen(true)}
+        aria-label="Open menu"
         aria-expanded={panelOpen}
-        className="md:hidden fixed top-3 right-3 z-20 rounded-md px-3 py-2 text-base leading-none bg-black/55 text-white border border-white/15 backdrop-blur-md"
+        aria-controls="control-panel"
+        tabIndex={panelOpen ? -1 : 0}
+        className={`md:hidden fixed left-0 top-0 bottom-0 z-10 w-10 flex flex-col items-center gap-3 pt-4 border-r border-white/12 bg-black/35 backdrop-blur-md text-white/80 transition-transform duration-200 ease-in-out ${
+          panelOpen ? '-translate-x-full' : 'translate-x-0'
+        }`}
       >
-        {panelOpen ? '✕' : '☰'}
+        <span aria-hidden="true" className="text-base leading-none">
+          »
+        </span>
+        <span className="text-[11px] uppercase tracking-[0.25em] [writing-mode:vertical-rl]">
+          Menu
+        </span>
       </button>
 
-      {/* 左メニュー：半透明で上に載せる。モバイルではオフキャンバスにスライド。 */}
+      {/* Mobile: tap anywhere outside the open panel to tuck it back into the rail. */}
+      {panelOpen && (
+        <button
+          type="button"
+          onClick={() => setPanelOpen(false)}
+          aria-label="Close menu"
+          className="md:hidden fixed inset-0 z-[5] bg-black/20 cursor-default"
+        />
+      )}
+
+      {/* 左メニュー：半透明で上に載せる。モバイルでは細いレールに収納し、タップで飛び出す。 */}
       <aside
+        id="control-panel"
         className={`fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] z-10 overflow-y-auto p-4 border-r border-white/12 bg-black/35 backdrop-blur-md transition-transform duration-200 ease-in-out md:translate-x-0 ${
           panelOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
@@ -569,15 +591,25 @@ export default function Page() {
                           aria-pressed={active}
                           className={`group relative aspect-square overflow-hidden rounded-md bg-white transition-shadow ${
                             active
-                              ? 'ring-2 ring-white'
+                              ? 'ring-2 ring-white ring-offset-2 ring-offset-transparent'
                               : 'ring-1 ring-white/15 hover:ring-white/40'
                           }`}
                         >
                           <SwatchImage html={swatchSvgs[t.id]} />
+                          {active && (
+                            <span
+                              aria-hidden="true"
+                              className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/80 text-[10px] leading-none text-white ring-1 ring-white/90"
+                            >
+                              ✓
+                            </span>
+                          )}
                         </button>
                         <span
                           className={`text-[9px] leading-tight text-center break-words transition-opacity ${
-                            active ? 'opacity-100' : 'opacity-60'
+                            active
+                              ? 'font-semibold opacity-100'
+                              : 'opacity-60'
                           }`}
                         >
                           {t.label}
@@ -738,7 +770,7 @@ export default function Page() {
             )}
           </div>
 
-          {mode === 'warp' ? null : mode === 'switch' ? (
+          {mode === 'switch' && (
             <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 text-xs leading-relaxed">
               <div className="text-xs opacity-85 mb-1.5">Switching</div>
               <div>
@@ -752,26 +784,6 @@ export default function Page() {
                 viewport: {wallSize.width} × {wallSize.height}
               </div>
             </div>
-          ) : (
-            selectedTemplate && (
-              <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 text-xs leading-relaxed">
-                <div className="text-xs opacity-85 mb-1.5">Selected</div>
-                <div>
-                  <span className="opacity-70">group:</span>{' '}
-                  {selectedTemplate.group}
-                </div>
-                <div>
-                  <span className="opacity-70">id:</span> {selectedTemplate.id}
-                </div>
-                <div>
-                  <span className="opacity-70">motif:</span>{' '}
-                  {selectedTemplate.motifId}
-                </div>
-                <div className="mt-1.5 opacity-75">
-                  viewport: {wallSize.width} × {wallSize.height}
-                </div>
-              </div>
-            )
           )}
 
           {/* Export — download the current pattern as a standalone SVG. Hidden in the Warp

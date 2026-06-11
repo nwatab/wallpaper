@@ -63,6 +63,49 @@ const UPGRADE_GENERATORS: Record<
     gens: ['mirrorP3m1', 'rot60'],
     promotesTo: 'p6m',
   },
+  // p1 on a generic oblique lattice → only rotation (p2) or a finer translation
+  // lattice are possible promotions; reflections/glides are not lattice isometries.
+  'gen-p1-fleur-diaper': {
+    group: 'p1',
+    gens: ['rot180c', 'halfU', 'halfV', 'centring'],
+    promotesTo: 'p2 / sub-lattice p1',
+  },
+  // p2 on a generic oblique lattice → only a finer translation lattice threatens.
+  'gen-p2-tapa': {
+    group: 'p2',
+    gens: ['halfU', 'halfV', 'centring'],
+    promotesTo: 'p2 on a finer lattice',
+  },
+  // pm → second mirror ⇒ pmm; glide ⇒ pmg; centring ⇒ cm; diagonal mirror ⇒ square D4
+  'gen-pm-lotus': {
+    group: 'pm',
+    gens: ['mirrorV', 'rot180c', 'glideX', 'centring', 'diag'],
+    promotesTo: 'pmm / pmg / cm / p4m',
+  },
+  // pg → mirror ⇒ pmg/pm; C2 ⇒ pgg; centring ⇒ cm
+  'gen-pg-herringbone': {
+    group: 'pg',
+    gens: ['mirrorU', 'mirrorV', 'rot180c', 'centring', 'diag'],
+    promotesTo: 'pmg / pgg / cm',
+  },
+  // pmg → the glide becoming a pure mirror or an extra C2 family ⇒ pmm/cmm
+  'gen-pmg-water-bands': {
+    group: 'pmg',
+    gens: ['mirrorV', 'rot180c', 'centring'],
+    promotesTo: 'pmm / cmm',
+  },
+  // pgg → any mirror ⇒ pmg/cmm; 4-fold (square basis) ⇒ p4/p4g
+  'gen-pgg-yagasuri': {
+    group: 'pgg',
+    gens: ['mirrorU', 'mirrorV', 'diag', 'antiDiag', 'rot90c', 'centring'],
+    promotesTo: 'pmg / cmm / p4 / p4g',
+  },
+  // p3m1 → the other mirror family or a 60° rotation ⇒ p6m
+  'gen-p3m1-glazed': {
+    group: 'p3m1',
+    gens: ['mirrorP31m', 'rot60'],
+    promotesTo: 'p6m',
+  },
 };
 
 // Every gallery motif, with the group it is declared under, so we can also assert it
@@ -77,6 +120,13 @@ const FILL: Record<string, WallpaperGroup> = {
   'gen-p4g-pinwheel': 'p4g',
   'gen-p3-trefoil': 'p3',
   'gen-p31m-medallion': 'p31m',
+  'gen-p1-fleur-diaper': 'p1',
+  'gen-p2-tapa': 'p2',
+  'gen-pm-lotus': 'pm',
+  'gen-pg-herringbone': 'pg',
+  'gen-pmg-water-bands': 'pmg',
+  'gen-pgg-yagasuri': 'pgg',
+  'gen-p3m1-glazed': 'p3m1',
 };
 
 const MOTIF_OF: Record<string, string> = {
@@ -89,6 +139,13 @@ const MOTIF_OF: Record<string, string> = {
   'gen-p4g-pinwheel': 'p4g-pinwheel',
   'gen-p3-trefoil': 'p3-trefoil-knot',
   'gen-p31m-medallion': 'p31m-medallion',
+  'gen-p1-fleur-diaper': 'p1-fleur-diaper',
+  'gen-p2-tapa': 'p2-tapa-zigzag',
+  'gen-pm-lotus': 'pm-lotus-columns',
+  'gen-pg-herringbone': 'pg-herringbone',
+  'gen-pmg-water-bands': 'pmg-water-bands',
+  'gen-pgg-yagasuri': 'pgg-yagasuri',
+  'gen-p3m1-glazed': 'p3m1-glazed-rosette',
 };
 
 const inkOf = (id: string): { ink: Vec2[]; reps: Affine2D[]; regionFrac: number } => {

@@ -117,6 +117,13 @@ export const FRAC: Record<string, Affine2D> = {
   antiDiag: { a: 0, b: -1, c: -1, d: 0, e: 1, f: 1 }, // y = -x through centre
   rot90c: { a: 0, b: 1, c: -1, d: 0, e: 1, f: 0 }, // 90° about cell centre
   rot180c: { a: -1, b: 0, c: 0, d: -1, e: 1, f: 1 }, // 180° about cell centre
+  // Glide along u with axis v = 1/2 (groups.ts glideU) — pm/p1 → pmg/pg promotions.
+  glideX: { a: 1, b: 0, c: 0, d: -1, e: 0.5, f: 1 },
+  // Sub-lattice translations: invariance under any of these means the drawn cell is
+  // not primitive (the true pattern repeats finer / is centred).
+  halfU: { a: 1, b: 0, c: 0, d: 1, e: 0.5, f: 0 },
+  halfV: { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0.5 },
+  centring: { a: 1, b: 0, c: 0, d: 1, e: 0.5, f: 0.5 },
   // Hexagonal-lattice generators (integer matrices in the hex basis).
   rot60: { a: 1, b: 1, c: -1, d: 0, e: 0, f: 0 },
   // p3m1 mirror family (axes through the deep-hole 3-fold centres).

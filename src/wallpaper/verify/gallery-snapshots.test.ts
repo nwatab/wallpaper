@@ -19,6 +19,13 @@ const GALLERY_IDS = [
   'gen-p4g-pinwheel',
   'gen-p3-trefoil',
   'gen-p31m-medallion',
+  'gen-p1-fleur-diaper',
+  'gen-p2-tapa',
+  'gen-pm-lotus',
+  'gen-pg-herringbone',
+  'gen-pmg-water-bands',
+  'gen-pgg-yagasuri',
+  'gen-p3m1-glazed',
 ] as const;
 
 const OUT_DIR = join(process.cwd(), '__snapshots__', 'gallery');

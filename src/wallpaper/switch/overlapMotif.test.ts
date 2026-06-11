@@ -79,6 +79,21 @@ describe('placeUserMotif (overlap split)', () => {
     const r = placeUserMotif('p1', { strokes: [far] });
     expect(r.overlapReach).toBe(2);
   });
+
+  it('reach counts stroke width: ink, not points, must stay inside the wrap', () => {
+    const pts = [
+      { x: 0.5, y: 0.5 },
+      { x: 1.98, y: 0.5 }, // point overhang 0.98
+    ];
+    const thin = placeUserMotif('p1', {
+      strokes: [{ pts, width: 0.02, color: '#222222', layer: 'overlap' }],
+    });
+    expect(thin.overlapReach).toBe(1); // 0.98 + 0.01 = 0.99
+    const thick = placeUserMotif('p1', {
+      strokes: [{ pts, width: 0.06, color: '#222222', layer: 'overlap' }],
+    });
+    expect(thick.overlapReach).toBe(2); // 0.98 + 0.03 = 1.01
+  });
 });
 
 describe('renderGroupSvg (overlap layer)', () => {

@@ -291,17 +291,17 @@ export const placedUserMotif = (
   return transformMotif(motifRef, mp.placement);
 };
 
-// Cells beyond the home cell that any point of the motif reaches (≥1) — the seamless
-// export stamps the overlap layer's neighbour wrap this far.
+// Cells beyond the home cell that any INK of the motif reaches (≥1) — the seamless
+// export stamps the overlap layer's neighbour wrap this far. Stroke ink extends
+// width/2 past its points (a point overhang of 0.98 with width 0.06 reaches 1.01,
+// needing reach 2), so the overhang is padded per stroke; fills have no width.
 const motifReach = (m: GalleryMotif): number => {
-  const pts = [
-    ...(m.fills ?? []).flatMap((f) => f.pts),
-    ...(m.strokes ?? []).flatMap((s) => s.pts),
-  ];
-  const out = pts.reduce(
-    (r, p) =>
-      Math.max(r, -p.x, p.x - 1, -p.y, p.y - 1),
+  const overhang = (pts: Vec2[]): number =>
+    pts.reduce((r, p) => Math.max(r, -p.x, p.x - 1, -p.y, p.y - 1), -Infinity);
+  const out = Math.max(
     0,
+    ...(m.fills ?? []).map((f) => overhang(f.pts)),
+    ...(m.strokes ?? []).map((s) => overhang(s.pts) + s.width / 2),
   );
   return Math.max(1, Math.ceil(out));
 };

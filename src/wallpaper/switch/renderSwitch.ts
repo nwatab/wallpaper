@@ -32,6 +32,8 @@ const renderTemplateSvg = (args: {
   // composited painter-style by per-copy depth ON TOP of the clipped base layer — the
   // only compositing that lets a whole copy occlude the copy behind it (seigaiha).
   overlapMotifSvg?: string;
+  // Depth orientation for that layer (derived per group by overlapGate).
+  overlapDepthRotationDeg?: number;
   viewport: Rect;
   pose: Pose;
   debugOptions?: DebugOptions;
@@ -72,7 +74,12 @@ const renderTemplateSvg = (args: {
   const motif = renderMotifLayer(scene, poseMatrix);
   const overlapMotif = args.overlapMotifSvg
     ? renderMotifLayer(
-        { ...scene, motifSvg: args.overlapMotifSvg, motifLayer: 'overlap' },
+        {
+          ...scene,
+          motifSvg: args.overlapMotifSvg,
+          motifLayer: 'overlap',
+          depthRotationDeg: args.overlapDepthRotationDeg ?? 0,
+        },
         poseMatrix,
       )
     : null;
@@ -155,6 +162,7 @@ export const renderGroupSvg = (args: {
     template: r.template,
     motifSvg: r.motifSvg,
     overlapMotifSvg: r.overlapMotifSvg,
+    overlapDepthRotationDeg: r.overlapDepthRotationDeg,
     viewport: args.viewport,
     pose,
     debugOptions: args.debugOptions,
@@ -212,6 +220,7 @@ export const renderRegionPreview = (args: {
     template: r.template,
     motifSvg: r.motifSvg,
     overlapMotifSvg: r.overlapMotifSvg,
+    overlapDepthRotationDeg: r.overlapDepthRotationDeg,
     viewport,
     pose,
     debugOptions: args.debugOptions,

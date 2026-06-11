@@ -15,6 +15,7 @@ import {
   foldShapeUv,
 } from '@/wallpaper/draw/foldIntoRegion';
 import { snapTargetsUv, snapToTargets } from '@/wallpaper/draw/snapTargets';
+import { overlapAllowed } from '@/wallpaper/switch/overlapGate';
 import { renderRegionPreview } from '@/wallpaper/switch/renderSwitch';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -154,6 +155,16 @@ export default function DrawPane({
   const [overlapMode, setOverlapMode] = useState(false);
   const [draft, setDraft] = useState<Vec2[] | null>(null);
 
+  // Painter depth order survives the group action only when every coset rep fixes the
+  // recede direction (Ru = u) — derived per group (overlapGate): p1/pm/pg/cm. For any
+  // other group an overlap drawing would visibly break the declared symmetry where
+  // copies overlap, so the toggle is gated rather than the promise.
+  const overlapOk = useMemo(
+    () => overlapAllowed(referenceGroup as WallpaperGroup),
+    [referenceGroup],
+  );
+  const overlapActive = overlapMode && overlapOk;
+
   const drawing = useRef(false);
   // The draft's source of truth for the GESTURE: pointer events can all land inside one
   // React batch (fast synthetic input), where the `draft` STATE closure in onPointerUp
@@ -276,7 +287,7 @@ export default function DrawPane({
     if (pts.length < 2) return;
     const closed = tool === 'rect' || tool === 'ellipse' || tool === 'circle';
     const group = referenceGroup as WallpaperGroup;
-    if (overlapMode) {
+    if (overlapActive) {
       // Stored raw (reference uv, not folded): the renderer depth-sorts its copies.
       if (closed && fillMode) {
         if (pts.length < 3) return;
@@ -487,12 +498,19 @@ export default function DrawPane({
         <button
           type="button"
           onClick={() => setOverlapMode((s) => !s)}
-          aria-pressed={overlapMode}
-          title="stack copies painter-style (a front copy hides the copy behind it, e.g. seigaiha fans) instead of folding ink into the unit"
+          aria-pressed={overlapActive}
+          disabled={!overlapOk}
+          title={
+            overlapOk
+              ? 'stack copies painter-style (a front copy hides the copy behind it, e.g. seigaiha fans) instead of folding ink into the unit'
+              : 'overlap stacking needs a single recede direction — rotations / crossing mirrors of this group would reorder the copies (available for p1, pm, pg, cm)'
+          }
           className={`rounded px-2 py-1 text-[11px] transition-colors ${
-            overlapMode
+            overlapActive
               ? 'bg-white/90 text-black'
-              : 'bg-white/10 text-white/80 hover:bg-white/20'
+              : overlapOk
+                ? 'bg-white/10 text-white/80 hover:bg-white/20'
+                : 'bg-white/5 text-white/30 cursor-not-allowed'
           }`}
         >
           ⧉ Overlap

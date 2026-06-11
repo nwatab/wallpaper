@@ -94,9 +94,12 @@ export type TileableGeometry = {
   depthRotationDeg?: number;
   // A drawn motif's layer:'overlap' shapes (placeUserMotif split), baked as a second
   // depth-sorted layer ON TOP of the base layer; overlapReach (cells, ≥1) sets how far
-  // the neighbour wrap must stamp for the baked cell to stay seamless.
+  // the neighbour wrap must stamp for the baked cell to stay seamless, and
+  // overlapDepthRotationDeg its depth orientation (derived per group by overlapGate —
+  // distinct from the template's own depthRotationDeg).
   overlapMotifSvg?: string;
   overlapReach?: number;
+  overlapDepthRotationDeg?: number;
 };
 
 export type TileableOptions = {
@@ -201,7 +204,7 @@ const buildCellLayers = (
         basis,
         opsInCellXy,
         geometry.overlapMotifSvg,
-        geometry.depthRotationDeg ?? 0,
+        geometry.overlapDepthRotationDeg ?? 0,
         geometry.overlapReach ?? 1,
       )
     : '';
@@ -389,6 +392,7 @@ export const tileableFromGroup = (
       depthRotationDeg: r.template.defaultPose?.rotationDeg ?? 0,
       overlapMotifSvg: r.overlapMotifSvg,
       overlapReach: r.overlapReach,
+      overlapDepthRotationDeg: r.overlapDepthRotationDeg,
     },
     options,
   );
@@ -458,6 +462,7 @@ export const cellFromGroup = (
         depthRotationDeg: r.template.defaultPose?.rotationDeg ?? 0,
         overlapMotifSvg: r.overlapMotifSvg,
         overlapReach: r.overlapReach,
+        overlapDepthRotationDeg: r.overlapDepthRotationDeg,
       },
       options,
     ),

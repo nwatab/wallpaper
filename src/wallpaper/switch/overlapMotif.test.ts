@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { GalleryMotif } from '../galleryMotifs';
 import { splitByLayer } from '../galleryMotifs';
+import { applyToPoint, basisToMatrix } from '../affine';
 import { placeUserMotif } from './shapeFamilies';
 import { renderGroupSvg } from './renderSwitch';
 import { detectMaximalGroup } from './maximalityReport';
-import { tileableFromGroup } from '../export/exportSvg';
+import { cellFromGroup, tileableFromGroup } from '../export/exportSvg';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Overlap draw layer (M3). layer:'overlap' shapes are stored AS DRAWN and composite
@@ -85,7 +86,7 @@ describe('renderGroupSvg (overlap layer)', () => {
 
   it('renders no overlap layer without overlap ink (back-compat)', () => {
     const svg = renderGroupSvg({
-      group: 'p4m',
+      group: 'pm',
       viewport,
       scale: 100,
       rotationDeg: 0,
@@ -97,7 +98,7 @@ describe('renderGroupSvg (overlap layer)', () => {
 
   it('renders overlap ink as its own unclipped layer on top of the base', () => {
     const svg = renderGroupSvg({
-      group: 'p4m',
+      group: 'pm',
       viewport,
       scale: 100,
       rotationDeg: 0,
@@ -180,5 +181,26 @@ describe('tileable export (overlap layer bakes with its reach)', () => {
     );
     expect(svg).not.toContain('matrix(1 0 0 1 2 2)');
     expect(svg).toContain('matrix(1 0 0 1 1 1)');
+  });
+
+  it('orients the pg overlap depth along the glide axis (canonical x, not y)', () => {
+    // pg's coset reps all put copy centres on the same y per lattice row, so a y-sort
+    // (the old constant depth 0) leaves x unordered; the derived depth 90 must emit
+    // the baked overlap stamps in non-decreasing canonical x.
+    const r = placeUserMotif('pg', {});
+    const B = basisToMatrix(r.template.basis);
+    const motif: GalleryMotif = { strokes: [{ ...overlapStroke }] };
+    const cell = cellFromGroup('pg', motif, { background: 'transparent' })!;
+    const chunks = cell.cellSvg.split('<g clip-path="url(#cell-clip)">');
+    const overlapChunk = chunks[chunks.length - 1]; // overlapExtra is appended last
+    const xs = [...overlapChunk.matchAll(/matrix\(([-\d.e ]+)\)/g)].map((m) => {
+      const [a, b, c, d, e, f] = m[1].split(' ').map(Number);
+      const centreUv = { x: a * 0.5 + c * 0.5 + e, y: b * 0.5 + d * 0.5 + f };
+      return applyToPoint(B, centreUv).x;
+    });
+    expect(xs.length).toBeGreaterThan(1);
+    for (let i = 1; i < xs.length; i++) {
+      expect(xs[i]).toBeGreaterThanOrEqual(xs[i - 1] - 1e-9);
+    }
   });
 });

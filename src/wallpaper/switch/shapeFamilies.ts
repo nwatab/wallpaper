@@ -18,6 +18,7 @@ import {
   type GalleryMotif,
 } from '../galleryMotifs';
 import { switchMotifs } from './shapeMotifs';
+import { overlapDepthRotationDeg } from './overlapGate';
 import {
   congruenceClasses,
   discriminatorOf,
@@ -174,6 +175,9 @@ export type Renderable = {
   // How many cells beyond its home cell the overlap ink reaches (≥1): the export's
   // neighbour wrap must stamp this far for the baked cell to stay seamless.
   overlapReach?: number;
+  // Depth orientation for the overlap layer, derived per group (overlapGate): the
+  // rotation carrying the group's recede direction onto +y. pm → 0, pg → 90, …
+  overlapDepthRotationDeg?: number;
 };
 
 const switchTemplate = (
@@ -323,7 +327,13 @@ export const placeUserMotif = (
     motifSvg: motifToSvg(base),
     alignXy,
     ...(hasShapes(overlap)
-      ? { overlapMotifSvg: motifToSvg(overlap), overlapReach: motifReach(overlap) }
+      ? {
+          overlapMotifSvg: motifToSvg(overlap),
+          overlapReach: motifReach(overlap),
+          // Defensive 0 for unsound groups — the draw UI gates creation, but stored
+          // data should still render deterministically if it ever carries the tag.
+          overlapDepthRotationDeg: overlapDepthRotationDeg(group) ?? 0,
+        }
       : {}),
   };
 };

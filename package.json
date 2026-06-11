@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install chromium"
+    "test:e2e:install": "playwright install chromium",
+    "bench:render": "playwright test -c bench/playwright.bench.config.ts",
+    "bench:guard": "playwright test -c bench/playwright.diagnose.config.ts"
   },
   "dependencies": {
     "next": "16.1.0",

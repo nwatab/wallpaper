@@ -760,7 +760,7 @@ export default function Page() {
             )}
           </div>
 
-          {mode === 'warp' ? null : mode === 'switch' ? (
+          {mode === 'switch' && (
             <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 text-xs leading-relaxed">
               <div className="text-xs opacity-85 mb-1.5">Switching</div>
               <div>
@@ -774,26 +774,6 @@ export default function Page() {
                 viewport: {wallSize.width} × {wallSize.height}
               </div>
             </div>
-          ) : (
-            selectedTemplate && (
-              <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 text-xs leading-relaxed">
-                <div className="text-xs opacity-85 mb-1.5">Selected</div>
-                <div>
-                  <span className="opacity-70">group:</span>{' '}
-                  {selectedTemplate.group}
-                </div>
-                <div>
-                  <span className="opacity-70">id:</span> {selectedTemplate.id}
-                </div>
-                <div>
-                  <span className="opacity-70">motif:</span>{' '}
-                  {selectedTemplate.motifId}
-                </div>
-                <div className="mt-1.5 opacity-75">
-                  viewport: {wallSize.width} × {wallSize.height}
-                </div>
-              </div>
-            )
           )}
 
           {/* Export — download the current pattern as a standalone SVG. Hidden in the Warp

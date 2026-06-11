@@ -1,4 +1,4 @@
-import type { Affine2D, DebugOptions, Pose, Rect, Scene, UnitTemplate, WallpaperGroup } from '../types';
+import type { Affine2D, DebugOptions, Pose, Rect, Scene, UnitTemplate, Vec2, WallpaperGroup } from '../types';
 import { tile } from '../engine/tile';
 import { basisToMatrix, compose, invert, rotateDeg, scaleUniform, toSvgMatrix } from '../affine';
 import { toSVG } from '@/lib/coords/surfaces';
@@ -168,6 +168,8 @@ export const renderRegionPreview = (args: {
 }): {
   svg: string;
   mapping: CanvasMapping;
+  // The placed template's lattice basis — the uv↔XY adapter snap-target derivation needs.
+  basis: { a: Vec2; b: Vec2 };
   toUv: Affine2D;
   toCanvas: Affine2D;
 } => {
@@ -198,6 +200,7 @@ export const renderRegionPreview = (args: {
   return {
     svg,
     mapping,
+    basis: r.template.basis,
     // canvas → XY → uv  and  uv → XY → canvas.
     toUv: compose(invert(B), mapping.fromCanvas),
     toCanvas: compose(mapping.toCanvas, B),

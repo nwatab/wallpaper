@@ -92,6 +92,11 @@ export type TileableGeometry = {
   // Intrinsic recede orientation for 'overlap' depth (template.defaultPose.rotationDeg). Shared
   // with the gallery renderer (engine/render.overlapDepth) so the baked cell stacks identically.
   depthRotationDeg?: number;
+  // A drawn motif's layer:'overlap' shapes (placeUserMotif split), baked as a second
+  // depth-sorted layer ON TOP of the base layer; overlapReach (cells, ≥1) sets how far
+  // the neighbour wrap must stamp for the baked cell to stay seamless.
+  overlapMotifSvg?: string;
+  overlapReach?: number;
 };
 
 export type TileableOptions = {
@@ -132,11 +137,20 @@ const stampCentre = (basisMatrix: Affine2D, uv: Affine2D): Vec2 =>
 export const cellStampTransforms = (
   basis: { a: Vec2; b: Vec2 },
   opsInCellXy: Affine2D[],
+  // Neighbour wrap radius in cells. The default ±1 suffices for region-sized motifs;
+  // overlap drawings can reach further (their overlapReach), and every copy whose ink
+  // touches the unit square must be stamped or the baked cell loses that ink.
+  reach = 1,
 ): Affine2D[] => {
   const B = basisToMatrix(basis);
   const Binv = invert(B);
   const opsUv = opsInCellXy.map((op) => compose(Binv, compose(op, B)));
-  return NEIGHBORS.flatMap(({ di, dj }) =>
+  const offsets = Array.from({ length: 2 * reach + 1 }, (_, k) => k - reach);
+  const neighbors =
+    reach === 1
+      ? NEIGHBORS
+      : offsets.flatMap((di) => offsets.map((dj) => ({ di, dj })));
+  return neighbors.flatMap(({ di, dj }) =>
     opsUv.map((uv) => compose(translateXy(di, dj), uv)),
   );
 };
@@ -149,6 +163,30 @@ export const cellStampTransforms = (
 // same cell the tile export emits.
 const CELL_CLIP = `<clipPath id="cell-clip" clipPathUnits="userSpaceOnUse"><rect x="0" y="0" width="1" height="1"/></clipPath>`;
 
+// The depth-sorted stamp body of one overlap-composited layer (shared painter's order
+// with the gallery renderer via overlapDepth), clipped to the unit cell.
+const overlapLayerBody = (
+  basis: { a: Vec2; b: Vec2 },
+  opsInCellXy: Affine2D[],
+  motifSvg: string,
+  depthRotationDeg: number,
+  reach: number,
+): string => {
+  const B = basisToMatrix(basis);
+  const ordered = [...cellStampTransforms(basis, opsInCellXy, reach)].sort(
+    (p, q) =>
+      overlapDepth(stampCentre(B, p), depthRotationDeg) -
+      overlapDepth(stampCentre(B, q), depthRotationDeg),
+  );
+  return (
+    `<g clip-path="url(#cell-clip)">` +
+    ordered
+      .map((uv) => `<g transform="${toSvgMatrix(uv)}">${motifSvg}</g>`)
+      .join('') +
+    `</g>`
+  );
+};
+
 const buildCellLayers = (
   geometry: TileableGeometry,
 ): { defs: string; body: string } => {
@@ -157,23 +195,29 @@ const buildCellLayers = (
   const B = basisToMatrix(basis);
   const stamps = cellStampTransforms(basis, opsInCellXy);
 
+  // A drawn motif's overlap layer bakes on top of whatever the base layer is.
+  const overlapExtra = geometry.overlapMotifSvg
+    ? overlapLayerBody(
+        basis,
+        opsInCellXy,
+        geometry.overlapMotifSvg,
+        geometry.depthRotationDeg ?? 0,
+        geometry.overlapReach ?? 1,
+      )
+    : '';
+
   if (motifLayer === 'overlap') {
     // Paint back-to-front by the SHARED intrinsic recede depth (engine/render.overlapDepth) so
     // copies stack in exactly the gallery's painter's order — across the 3×3 neighbourhood too,
     // so arcs are continuous across the cell seam.
-    const depthRot = geometry.depthRotationDeg ?? 0;
-    const ordered = [...stamps].sort(
-      (p, q) =>
-        overlapDepth(stampCentre(B, p), depthRot) -
-        overlapDepth(stampCentre(B, q), depthRot),
+    const body = overlapLayerBody(
+      basis,
+      opsInCellXy,
+      motifSvg,
+      geometry.depthRotationDeg ?? 0,
+      1,
     );
-    const body =
-      `<g clip-path="url(#cell-clip)">` +
-      ordered
-        .map((uv) => `<g transform="${toSvgMatrix(uv)}">${motifSvg}</g>`)
-        .join('') +
-      `</g>`;
-    return { defs: CELL_CLIP, body };
+    return { defs: CELL_CLIP, body: body + overlapExtra };
   }
   if (motifLayer === 'clip') {
     // Each copy is additionally clipped to its own fundamental region (region in uv =
@@ -191,7 +235,7 @@ const buildCellLayers = (
         )
         .join('') +
       `</g>`;
-    return { defs: CELL_CLIP + frClip, body };
+    return { defs: CELL_CLIP + frClip, body: body + overlapExtra };
   }
   // Default: design motifs already sized to their region; stamp the cell orbit, clipped to cell.
   const body =
@@ -200,7 +244,7 @@ const buildCellLayers = (
       .map((uv) => `<g transform="${toSvgMatrix(uv)}">${motifSvg}</g>`)
       .join('') +
     `</g>`;
-  return { defs: CELL_CLIP, body };
+  return { defs: CELL_CLIP, body: body + overlapExtra };
 };
 
 /**
@@ -343,6 +387,8 @@ export const tileableFromGroup = (
       motifSvg: r.motifSvg,
       motifLayer: r.template.motifLayer ?? 'clip',
       depthRotationDeg: r.template.defaultPose?.rotationDeg ?? 0,
+      overlapMotifSvg: r.overlapMotifSvg,
+      overlapReach: r.overlapReach,
     },
     options,
   );
@@ -410,6 +456,8 @@ export const cellFromGroup = (
         motifSvg: r.motifSvg,
         motifLayer: r.template.motifLayer ?? 'clip',
         depthRotationDeg: r.template.defaultPose?.rotationDeg ?? 0,
+        overlapMotifSvg: r.overlapMotifSvg,
+        overlapReach: r.overlapReach,
       },
       options,
     ),

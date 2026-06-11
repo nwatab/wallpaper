@@ -28,6 +28,10 @@ const poseFromMatrix = (m: Affine2D): Pose => ({
 const renderTemplateSvg = (args: {
   template: UnitTemplate;
   motifSvg: string;
+  // The motif's as-drawn layer:'overlap' shapes (placeUserMotif split): the same orbit,
+  // composited painter-style by per-copy depth ON TOP of the clipped base layer — the
+  // only compositing that lets a whole copy occlude the copy behind it (seigaiha).
+  overlapMotifSvg?: string;
   viewport: Rect;
   pose: Pose;
   debugOptions?: DebugOptions;
@@ -66,6 +70,12 @@ const renderTemplateSvg = (args: {
   };
 
   const motif = renderMotifLayer(scene, poseMatrix);
+  const overlapMotif = args.overlapMotifSvg
+    ? renderMotifLayer(
+        { ...scene, motifSvg: args.overlapMotifSvg, motifLayer: 'overlap' },
+        poseMatrix,
+      )
+    : null;
   const overlay = renderOverlayLayer(args.debugOptions, {
     opsInCellXy,
     poseMatrix,
@@ -77,8 +87,10 @@ const renderTemplateSvg = (args: {
     ? renderSymmetryElements({ opsInCellXy, basis, poseMatrix, viewBox })
     : '';
 
-  const inner = `${motif.defs ? `<defs>${motif.defs}</defs>` : ''}
+  const defs = `${motif.defs}${overlapMotif?.defs ?? ''}`;
+  const inner = `${defs ? `<defs>${defs}</defs>` : ''}
       <g data-layer="motif">${motif.body}</g>
+      ${overlapMotif ? `<g data-layer="motif-overlap">${overlapMotif.body}</g>` : ''}
       ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
       ${symmetry}`;
 
@@ -105,9 +117,10 @@ const renderTemplateSvg = (args: {
       width="${vb.w}"
       height="${vb.h}"
     >
-      ${motif.defs ? `<defs>${motif.defs}</defs>` : ''}
+      ${defs ? `<defs>${defs}</defs>` : ''}
       <g data-layer="view" transform="${toSvgMatrix(view)}">
         <g data-layer="motif">${motif.body}</g>
+        ${overlapMotif ? `<g data-layer="motif-overlap">${overlapMotif.body}</g>` : ''}
         ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
         ${symmetry}
       </g>
@@ -141,6 +154,7 @@ export const renderGroupSvg = (args: {
   return renderTemplateSvg({
     template: r.template,
     motifSvg: r.motifSvg,
+    overlapMotifSvg: r.overlapMotifSvg,
     viewport: args.viewport,
     pose,
     debugOptions: args.debugOptions,
@@ -197,6 +211,7 @@ export const renderRegionPreview = (args: {
   const svg = renderTemplateSvg({
     template: r.template,
     motifSvg: r.motifSvg,
+    overlapMotifSvg: r.overlapMotifSvg,
     viewport,
     pose,
     debugOptions: args.debugOptions,

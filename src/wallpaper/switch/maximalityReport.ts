@@ -1,7 +1,8 @@
 import type { GalleryMotif } from '../galleryMotifs';
-import type { WallpaperGroup } from '../types';
-import { motifInk } from '../galleryMotifs';
+import type { Vec2, WallpaperGroup } from '../types';
+import { motifInk, splitByLayer } from '../galleryMotifs';
 import { asymmetricUnitUv } from '../regions';
+import { foldFillUv, foldLatticeWindow } from '../draw/foldIntoRegion';
 import { getGroup } from '../groups';
 import {
   sampleInk,
@@ -79,7 +80,29 @@ export const detectMaximalGroup = (
   const declaredGeom = geomOf.get(declared);
   if (!declaredGeom) throw new Error(`Unknown group: ${declared}`);
 
-  const ink = sampleInk(motifInk(motifInDeclaredUv), N, asymmetricUnitUv[declared]);
+  // Base ink lives inside the unit (the fold invariant) and samples directly. Overlap
+  // ink is stored AS DRAWN and may extend across copies — but ink PRESENCE is
+  // occlusion-independent (a point is inked iff any copy inks it), so the rendered
+  // pattern's binary ink is the orbit of the FOLDED overlap ink. Folding each ink
+  // polygon (over a window derived from its own extent) reduces the overlap layer to
+  // unit-contained polygons; the existing sampler then sees exactly the rendered ink.
+  const { base, overlap } = splitByLayer(motifInDeclaredUv);
+  const overlapPolys = motifInk(overlap);
+  const overlapWindow = overlapPolys.flat().reduce(
+    (w, p) => ({
+      min: { x: Math.min(w.min.x, p.x), y: Math.min(w.min.y, p.y) },
+      max: { x: Math.max(w.max.x, p.x), y: Math.max(w.max.y, p.y) },
+    }),
+    { min: { x: 0, y: 0 }, max: { x: 1, y: 1 } },
+  );
+  const foldedOverlap: Vec2[][] = overlapPolys.flatMap((poly) =>
+    foldFillUv(poly, declared, foldLatticeWindow(declared, overlapWindow)),
+  );
+  const ink = sampleInk(
+    [...motifInk(base), ...foldedOverlap],
+    N,
+    asymmetricUnitUv[declared],
+  );
   const declaredReps = getGroup(declared).cosetReps;
   const fingerprint = patternFingerprint(ink, declaredReps);
 

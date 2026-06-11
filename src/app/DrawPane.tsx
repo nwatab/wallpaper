@@ -27,7 +27,9 @@ import { renderRegionPreview } from '@/wallpaper/switch/renderSwitch';
 // only on commit (pointer up).
 //
 // Captured geometry is stored as a GalleryMotif in reference-frame uv — the same data the
-// engine consumes — so a drawing is just a new SOURCE of the verified pipeline.
+// engine consumes — so a drawing is just a new SOURCE of the verified pipeline. Gestures
+// commit FOLDED into the asymmetric unit (kaleidoscope capture) unless Overlap mode is
+// on, which stores them as drawn with layer:'overlap' for per-copy painter compositing.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CANVAS = { width: 360, height: 360, padding: 28 };
@@ -145,6 +147,11 @@ export default function DrawPane({
   const [fillMode, setFillMode] = useState(false);
   const [snapOn, setSnapOn] = useState(true);
   const [zoom, setZoom] = useState<Zoom>('region');
+  // Overlap mode (M3): commit gestures AS DRAWN with layer:'overlap' instead of folding.
+  // Their orbit copies composite painter-style by per-copy depth, so a whole copy can
+  // occlude the copy behind it — seigaiha's front fan hiding the back fan's rings —
+  // which neither folding nor full-canvas flattening can express.
+  const [overlapMode, setOverlapMode] = useState(false);
   const [draft, setDraft] = useState<Vec2[] | null>(null);
 
   const drawing = useRef(false);
@@ -259,6 +266,18 @@ export default function DrawPane({
     if (pts.length < 2) return;
     const closed = tool === 'rect' || tool === 'ellipse' || tool === 'circle';
     const group = referenceGroup as WallpaperGroup;
+    if (overlapMode) {
+      // Stored raw (reference uv, not folded): the renderer depth-sorts its copies.
+      if (closed && fillMode) {
+        if (pts.length < 3) return;
+        const fill: Fill = { pts, color, layer: 'overlap' };
+        commit({ ...motif, fills: [...(motif.fills ?? []), fill] });
+      } else {
+        const stroke: Stroke = { pts, width, color, closed, layer: 'overlap' };
+        commit({ ...motif, strokes: [...(motif.strokes ?? []), stroke] });
+      }
+      return;
+    }
     if (closed && fillMode) {
       const fills: Fill[] = foldFillUv(pts, group, latticeWindow).map((pp) => ({
         pts: pp,
@@ -451,6 +470,19 @@ export default function DrawPane({
           }`}
         >
           ⌖ Snap
+        </button>
+        <button
+          type="button"
+          onClick={() => setOverlapMode((s) => !s)}
+          aria-pressed={overlapMode}
+          title="stack copies painter-style (a front copy hides the copy behind it, e.g. seigaiha fans) instead of folding ink into the unit"
+          className={`rounded px-2 py-1 text-[11px] transition-colors ${
+            overlapMode
+              ? 'bg-white/90 text-black'
+              : 'bg-white/10 text-white/80 hover:bg-white/20'
+          }`}
+        >
+          ⧉ Overlap
         </button>
         <button
           type="button"

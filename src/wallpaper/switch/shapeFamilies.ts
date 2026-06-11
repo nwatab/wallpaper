@@ -10,7 +10,13 @@ import {
 import { asymmetricUnitUv } from '../regions';
 import { unitTemplates } from '../unitTemplates';
 import { motifs } from '../motifs';
-import { galleryMotifDefs, motifToSvg, type GalleryMotif } from '../galleryMotifs';
+import {
+  galleryMotifDefs,
+  hasShapes,
+  motifToSvg,
+  splitByLayer,
+  type GalleryMotif,
+} from '../galleryMotifs';
 import { switchMotifs } from './shapeMotifs';
 import {
   congruenceClasses,
@@ -162,6 +168,12 @@ export type Renderable = {
   template: UnitTemplate;
   motifSvg: string;
   alignXy: Affine2D;
+  // The as-drawn (not folded) shapes composited painter-style by per-copy depth —
+  // present only when the motif carries layer:'overlap' shapes (M3 draw).
+  overlapMotifSvg?: string;
+  // How many cells beyond its home cell the overlap ink reaches (≥1): the export's
+  // neighbour wrap must stamp this far for the baked cell to stay seamless.
+  overlapReach?: number;
 };
 
 const switchTemplate = (
@@ -275,8 +287,25 @@ export const placedUserMotif = (
   return transformMotif(motifRef, mp.placement);
 };
 
+// Cells beyond the home cell that any point of the motif reaches (≥1) — the seamless
+// export stamps the overlap layer's neighbour wrap this far.
+const motifReach = (m: GalleryMotif): number => {
+  const pts = [
+    ...(m.fills ?? []).flatMap((f) => f.pts),
+    ...(m.strokes ?? []).flatMap((s) => s.pts),
+  ];
+  const out = pts.reduce(
+    (r, p) =>
+      Math.max(r, -p.x, p.x - 1, -p.y, p.y - 1),
+    0,
+  );
+  return Math.max(1, Math.ceil(out));
+};
+
 // Renderable for a reference-frame user motif under `group` (mirrors renderableByGroup
-// for stored motifs, but the geometry comes from the drawing/preset).
+// for stored motifs, but the geometry comes from the drawing/preset). The motif's
+// layer:'overlap' shapes are split out into their own svg: they composite per-copy
+// (painter's depth) instead of being clipped to the region.
 export const placeUserMotif = (
   group: WallpaperGroup,
   motifRef: GalleryMotif,
@@ -288,10 +317,14 @@ export const placeUserMotif = (
     ref === group
       ? identity()
       : (memberPlacements(ref).find((p) => p.group === group)?.alignXy ?? identity());
+  const { base, overlap } = splitByLayer(placedUserMotif(group, motifRef));
   return {
     template: switchTemplate(group, basis, regionXy),
-    motifSvg: motifToSvg(placedUserMotif(group, motifRef)),
+    motifSvg: motifToSvg(base),
     alignXy,
+    ...(hasShapes(overlap)
+      ? { overlapMotifSvg: motifToSvg(overlap), overlapReach: motifReach(overlap) }
+      : {}),
   };
 };
 

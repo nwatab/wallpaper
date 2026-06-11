@@ -7,6 +7,7 @@ import { placeUserMotif } from '../switch/shapeFamilies';
 import { buildCanvasMapping } from './canvasMapping';
 import {
   foldFillUv,
+  foldLatticeWindow,
   foldShapeUv,
   regionCandidatesUv,
 } from './foldIntoRegion';
@@ -160,6 +161,32 @@ describe('foldShapeUv', () => {
 //              candidate c" is exactly the renderer's per-copy clip condition.
 // ─────────────────────────────────────────────────────────────────────────────
 
+describe('foldLatticeWindow', () => {
+  it('stays at the pinned ±2 baseline for cell-sized windows (p4m: centre-based ops)', () => {
+    expect(
+      foldLatticeWindow('p4m', {
+        min: { x: -0.5, y: -0.5 },
+        max: { x: 1.5, y: 1.5 },
+      }),
+    ).toBe(2);
+  });
+
+  it('never returns less than the baseline 2', () => {
+    const groups = Object.keys(asymmetricUnitUv) as WallpaperGroup[];
+    for (const group of groups) {
+      expect(
+        foldLatticeWindow(group, { min: { x: 0, y: 0 }, max: { x: 1, y: 1 } }),
+      ).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('widens for zoomed-out windows on origin-throw groups (p3)', () => {
+    expect(
+      foldLatticeWindow('p3', { min: { x: -1, y: -1 }, max: { x: 2, y: 2 } }),
+    ).toBeGreaterThanOrEqual(3);
+  });
+});
+
 describe('candidate coverage (no silent drops)', () => {
   // Mirrors DrawPane's CANVAS — only sets how far past the bbox the scan reaches; the
   // scan range itself is DERIVED per group from the actual capture mapping below.
@@ -198,6 +225,67 @@ describe('candidate coverage (no silent drops)', () => {
         }
       }
       expect(holes, `${group} uncovered: ${holes.slice(0, 8).join(' ')}`).toHaveLength(0);
+    }
+  });
+
+  // Same derivation for the zoomed-out canvas windows (DrawPane's Cell / 2×2): fit the
+  // window polygon, take the reachable uv corners, derive the lattice window with
+  // foldLatticeWindow, and pin that the derived candidates leave no holes.
+  it('covers the zoomed-out (cell / 2×2) canvas windows with the derived lattice window', () => {
+    const windows: Vec2[][] = [
+      [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 1, y: 1 },
+        { x: 0, y: 1 },
+      ],
+      [
+        { x: -0.5, y: -0.5 },
+        { x: 1.5, y: -0.5 },
+        { x: 1.5, y: 1.5 },
+        { x: -0.5, y: 1.5 },
+      ],
+    ];
+    const groups = Object.keys(asymmetricUnitUv) as WallpaperGroup[];
+    for (const group of groups) {
+      const t = placeUserMotif(group, {}).template;
+      const B = basisToMatrix(t.basis);
+      for (const win of windows) {
+        const winXy = win.map((p) => applyToPoint(B, p));
+        const mapping = buildCanvasMapping(winXy, CANVAS);
+        const pxToUv = invert(compose(mapping.toCanvas, B));
+        const corners: Vec2[] = [
+          { x: 0, y: 0 },
+          { x: CANVAS.width, y: 0 },
+          { x: CANVAS.width, y: CANVAS.height },
+          { x: 0, y: CANVAS.height },
+        ].map((p) => applyToPoint(pxToUv, p));
+        const uvWin = {
+          min: {
+            x: Math.min(...corners.map((p) => p.x)),
+            y: Math.min(...corners.map((p) => p.y)),
+          },
+          max: {
+            x: Math.max(...corners.map((p) => p.x)),
+            y: Math.max(...corners.map((p) => p.y)),
+          },
+        };
+        const W = foldLatticeWindow(group, uvWin);
+        const cands = regionCandidatesUv(group, W);
+        const holes: string[] = [];
+        for (let x = uvWin.min.x - 0.02; x <= uvWin.max.x + 0.02; x += 0.025) {
+          for (let y = uvWin.min.y - 0.02; y <= uvWin.max.y + 0.02; y += 0.025) {
+            const covered = cands.some((c) =>
+              insideRegion(applyToPoint(c.inv, { x, y }), group),
+            );
+            if (!covered) holes.push(`(${x.toFixed(2)},${y.toFixed(2)})`);
+          }
+        }
+        expect(
+          holes,
+          `${group} W=${W} uncovered: ${holes.slice(0, 8).join(' ')}`,
+        ).toHaveLength(0);
+      }
     }
   });
 });

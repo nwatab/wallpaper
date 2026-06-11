@@ -43,25 +43,60 @@ const edgeValues = (p: Vec2, poly: Vec2[], winding: number): number[] =>
 const insideConvex = (p: Vec2, poly: Vec2[], winding: number): boolean =>
   edgeValues(p, poly, winding).every((d) => d >= -EPS_INSIDE);
 
-// Lattice window for the candidate copies, ±LATTICE_WINDOW cells. Must be 2 for the
-// same reason as the engine's TILE_OVERSCAN: origin-based ops (rotations/glides about
-// a corner, e.g. cmm's (u,v)↦(−u,−v)) throw their copy to the far side of the origin,
-// so covering a point just outside cell corner (1,0) can take translate (+2,0). The
-// coverage test scans the cell plus the widest canvas margin densely to pin this.
+// Lattice window for the candidate copies, ±latticeWindow cells. The baseline is 2 for
+// the same reason as the engine's TILE_OVERSCAN: origin-based ops (rotations/glides
+// about a corner, e.g. cmm's (u,v)↦(−u,−v)) throw their copy to the far side of the
+// origin, so covering a point just outside cell corner (1,0) can take translate (+2,0).
+// Wider draw windows (cell / 2×2 zoom) derive a wider window via foldLatticeWindow.
+// The coverage test scans every zoom's reachable canvas domain densely to pin both.
 const LATTICE_WINDOW = 2;
+
+export type UvWindow = { min: Vec2; max: Vec2 };
+
+// The ±W needed for the candidate copies to cover `window`: a point p lies in some
+// translate (i,j) + g(R) with (i,j) ∈ p − g(R), so |i| (resp |j|) is bounded by p's
+// distance to the far side of bbox(∪ g(R)) — both computable from the stored ops and
+// region. Never below the pinned baseline 2. Conservative (a bbox bound), with the
+// sufficiency pinned empirically by the coverage test.
+export const foldLatticeWindow = (
+  group: WallpaperGroup,
+  window: UvWindow,
+): number => {
+  const region = asymmetricUnitUv[group];
+  const imgs = getGroup(group).cosetReps.flatMap((op) =>
+    region.map((p) => applyToPoint(op, p)),
+  );
+  const u = {
+    minX: Math.min(...imgs.map((p) => p.x)),
+    maxX: Math.max(...imgs.map((p) => p.x)),
+    minY: Math.min(...imgs.map((p) => p.y)),
+    maxY: Math.max(...imgs.map((p) => p.y)),
+  };
+  const reach = Math.max(
+    Math.abs(window.min.x - u.maxX),
+    Math.abs(window.max.x - u.minX),
+    Math.abs(window.min.y - u.maxY),
+    Math.abs(window.max.y - u.minY),
+  );
+  return Math.max(LATTICE_WINDOW, Math.ceil(reach));
+};
 
 // The copies of the asymmetric unit that cover the draw window: the cell's cosetReps
 // plus the surrounding lattice translates, ordered home-cell-first and then by ring,
-// so near copies win the membership scan. Memoised per group (pure derivation).
-const candidatesCache = new Map<WallpaperGroup, Candidate[]>();
+// so near copies win the membership scan. Memoised per (group, window) — pure derivation.
+const candidatesCache = new Map<string, Candidate[]>();
 
-export const regionCandidatesUv = (group: WallpaperGroup): Candidate[] => {
-  const cached = candidatesCache.get(group);
+export const regionCandidatesUv = (
+  group: WallpaperGroup,
+  latticeWindow = LATTICE_WINDOW,
+): Candidate[] => {
+  const key = `${group}:${latticeWindow}`;
+  const cached = candidatesCache.get(key);
   if (cached) return cached;
   const ops = getGroup(group).cosetReps;
   const cells: Array<[number, number]> = [];
-  for (let i = -LATTICE_WINDOW; i <= LATTICE_WINDOW; i++) {
-    for (let j = -LATTICE_WINDOW; j <= LATTICE_WINDOW; j++) {
+  for (let i = -latticeWindow; i <= latticeWindow; i++) {
+    for (let j = -latticeWindow; j <= latticeWindow; j++) {
       cells.push([i, j]);
     }
   }
@@ -72,7 +107,7 @@ export const regionCandidatesUv = (group: WallpaperGroup): Candidate[] => {
       return { fwd, inv: invert(fwd) };
     }),
   );
-  candidatesCache.set(group, cands);
+  candidatesCache.set(key, cands);
   return cands;
 };
 
@@ -132,10 +167,11 @@ export const foldShapeUv = (
   pts: Vec2[],
   closed: boolean,
   group: WallpaperGroup,
+  latticeWindow?: number,
 ): FoldedShape[] => {
   const region = asymmetricUnitUv[group];
   const winding = Math.sign(signedArea(region)) || 1;
-  const cands = regionCandidatesUv(group);
+  const cands = regionCandidatesUv(group, latticeWindow);
 
   const walk = densify(closed ? [...pts, pts[0]] : pts);
   // membership scan, sticky: prefer the previous sample's copy at every step
@@ -218,10 +254,14 @@ const clipPolygon = (subject: Vec2[], clipper: Vec2[]): Vec2[] => {
  * pieces partition the drawn area, so the rendered orbit reproduces the fill exactly
  * as drawn.
  */
-export const foldFillUv = (pts: Vec2[], group: WallpaperGroup): Vec2[][] => {
+export const foldFillUv = (
+  pts: Vec2[],
+  group: WallpaperGroup,
+  latticeWindow?: number,
+): Vec2[][] => {
   if (pts.length < 3) return [];
   const region = asymmetricUnitUv[group];
-  const cands = regionCandidatesUv(group);
+  const cands = regionCandidatesUv(group, latticeWindow);
   return cands.flatMap((c) => {
     const clipped = clipPolygon(pts, applyPoly(c.fwd, region));
     if (clipped.length < 3 || Math.abs(signedArea(clipped)) < EPS_AREA) return [];

@@ -9,7 +9,13 @@ import {
   type Fill,
 } from '@/wallpaper/galleryMotifs';
 import { getGroup } from '@/wallpaper/groups';
-import { foldFillUv, foldShapeUv } from '@/wallpaper/draw/foldIntoRegion';
+import {
+  foldFillUv,
+  foldLatticeWindow,
+  foldShapeUv,
+} from '@/wallpaper/draw/foldIntoRegion';
+import { snapTargetsUv, snapToTargets } from '@/wallpaper/draw/snapTargets';
+import { overlapAllowed } from '@/wallpaper/switch/overlapGate';
 import { renderRegionPreview } from '@/wallpaper/switch/renderSwitch';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,14 +28,48 @@ import { renderRegionPreview } from '@/wallpaper/switch/renderSwitch';
 // only on commit (pointer up).
 //
 // Captured geometry is stored as a GalleryMotif in reference-frame uv — the same data the
-// engine consumes — so a drawing is just a new SOURCE of the verified pipeline.
+// engine consumes — so a drawing is just a new SOURCE of the verified pipeline. Gestures
+// commit FOLDED into the asymmetric unit (kaleidoscope capture) unless Overlap mode is
+// on, which stores them as drawn with layer:'overlap' for per-copy painter compositing.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CANVAS = { width: 360, height: 360, padding: 28 };
-const MAX_PEN_POINTS = 240;
-const MIN_STEP = 0.006; // min uv distance between captured pen samples
+const MAX_PEN_POINTS = 480;
+const MIN_STEP_PX = 3; // min canvas-px distance between captured pen samples
+const SNAP_PX = 12; // snap radius, in internal canvas px
 
-type Tool = 'pen' | 'line' | 'rect' | 'ellipse';
+type Tool = 'pen' | 'line' | 'rect' | 'ellipse' | 'circle';
+
+// Canvas window: which uv neighbourhood the canvas shows. 'region' (the fundamental
+// region's bbox, the original close-up) for single-unit detail; 'cell' / '2×2' zoom out
+// so one gesture can span copy and cell boundaries (a multi-cell arc folds into the
+// unit just like any stroke — the fold's lattice window is derived from the window).
+type Zoom = 'region' | 'cell' | 'cell4';
+
+const ZOOMS: { id: Zoom; label: string }[] = [
+  { id: 'region', label: 'Region' },
+  { id: 'cell', label: 'Cell' },
+  { id: 'cell4', label: '2×2' },
+];
+
+// The fitted uv polygon per zoom (undefined ⇒ the region itself, the default fit).
+// 2×2 is centred on the home cell so the unit stays in the middle of the canvas.
+const zoomWindowUv = (zoom: Zoom): Vec2[] | undefined =>
+  zoom === 'cell'
+    ? [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 1, y: 1 },
+        { x: 0, y: 1 },
+      ]
+    : zoom === 'cell4'
+      ? [
+          { x: -0.5, y: -0.5 },
+          { x: 1.5, y: -0.5 },
+          { x: 1.5, y: 1.5 },
+          { x: -0.5, y: 1.5 },
+        ]
+      : undefined;
 
 const PALETTE = ['#1c3f7a', '#2f6fb0', '#b5402a', '#1f7a52', '#222222'];
 
@@ -54,6 +94,28 @@ const ellipsePts = (a: Vec2, b: Vec2, n = 28): Vec2[] => {
   return Array.from({ length: n }, (_, i) => {
     const t = (i / n) * Math.PI * 2;
     return { x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) };
+  });
+};
+
+// A true circle in XY through the canvas px frame (the canvas is a similarity of XY —
+// a uv "circle" would render as an ellipse on the skewed lattices), centre→radius-point.
+// With snapped anchors, "concentric arcs about a lattice point" is exact by construction.
+const circlePts = (
+  centre: Vec2,
+  edge: Vec2,
+  toCanvas: Affine2D,
+  toUv: Affine2D,
+  n = 48,
+): Vec2[] => {
+  const cPx = applyToPoint(toCanvas, centre);
+  const ePx = applyToPoint(toCanvas, edge);
+  const r = Math.hypot(ePx.x - cPx.x, ePx.y - cPx.y);
+  return Array.from({ length: n }, (_, i) => {
+    const t = (i / n) * Math.PI * 2;
+    return applyToPoint(toUv, {
+      x: cPx.x + r * Math.cos(t),
+      y: cPx.y + r * Math.sin(t),
+    });
   });
 };
 
@@ -84,11 +146,38 @@ export default function DrawPane({
   const [color, setColor] = useState(PALETTE[0]);
   const [width, setWidth] = useState(0.04);
   const [fillMode, setFillMode] = useState(false);
+  const [snapOn, setSnapOn] = useState(true);
+  const [zoom, setZoom] = useState<Zoom>('region');
+  // Overlap mode (M3): commit gestures AS DRAWN with layer:'overlap' instead of folding.
+  // Their orbit copies composite painter-style by per-copy depth, so a whole copy can
+  // occlude the copy behind it — seigaiha's front fan hiding the back fan's rings —
+  // which neither folding nor full-canvas flattening can express.
+  const [overlapMode, setOverlapMode] = useState(false);
   const [draft, setDraft] = useState<Vec2[] | null>(null);
 
+  // Painter depth order survives the group action only when every coset rep fixes the
+  // recede direction (Ru = u) — derived per group (overlapGate): p1/pm/pg/cm. For any
+  // other group an overlap drawing would visibly break the declared symmetry where
+  // copies overlap, so the toggle is gated rather than the promise.
+  const overlapOk = useMemo(
+    () => overlapAllowed(referenceGroup as WallpaperGroup),
+    [referenceGroup],
+  );
+  const overlapActive = overlapMode && overlapOk;
+
   const drawing = useRef(false);
+  // The draft's source of truth for the GESTURE: pointer events can all land inside one
+  // React batch (fast synthetic input), where the `draft` STATE closure in onPointerUp
+  // is stale — committing from it silently dropped the gesture. The ref is updated
+  // synchronously per event; the state only drives the live preview render.
+  const draftRef = useRef<Vec2[] | null>(null);
   const history = useRef<GalleryMotif[]>([]);
   const svgRef = useRef<SVGSVGElement>(null);
+
+  const setDraftSynced = (value: Vec2[] | null) => {
+    draftRef.current = value;
+    setDraft(value);
+  };
 
   // The preview (tiled, clipped, with symmetry overlay) + the px↔uv affines.
   const preview = useMemo(
@@ -97,10 +186,11 @@ export default function DrawPane({
         group: referenceGroup,
         motif,
         canvas: CANVAS,
+        windowUv: zoomWindowUv(zoom),
         showSymmetryElements,
         debugOptions,
       }),
-    [referenceGroup, motif, showSymmetryElements, debugOptions],
+    [referenceGroup, motif, zoom, showSymmetryElements, debugOptions],
   );
 
   // Cell ops (reference uv) for the live draft reflections.
@@ -112,6 +202,55 @@ export default function DrawPane({
   const toUv = preview.toUv;
   const toCanvas = preview.toCanvas;
 
+  // The uv window the canvas can reach (its corners through toUv) — the domain the
+  // snap targets and the fold's lattice window are derived over.
+  const uvWindow = useMemo(() => {
+    const corners = [
+      { x: 0, y: 0 },
+      { x: CANVAS.width, y: 0 },
+      { x: CANVAS.width, y: CANVAS.height },
+      { x: 0, y: CANVAS.height },
+    ].map((p) => applyToPoint(toUv, p));
+    return {
+      min: {
+        x: Math.min(...corners.map((p) => p.x)),
+        y: Math.min(...corners.map((p) => p.y)),
+      },
+      max: {
+        x: Math.max(...corners.map((p) => p.x)),
+        y: Math.max(...corners.map((p) => p.y)),
+      },
+    };
+  }, [toUv]);
+
+  // Snap targets (lattice points / rotation centres / mirror axes / unit vertices)
+  // over the canvas window. Memoised per (group, window) inside snapTargetsUv, so
+  // this recompute on commit is a cache hit.
+  const snapTargets = useMemo(
+    () =>
+      snapTargetsUv({
+        group: referenceGroup as WallpaperGroup,
+        basis: preview.basis,
+        window: uvWindow,
+      }),
+    [referenceGroup, preview.basis, uvWindow],
+  );
+
+  // Candidate lattice window for the fold — wide enough for whatever the current
+  // canvas window can reach (zoomed-out windows need more than the ±2 baseline).
+  const latticeWindow = useMemo(
+    () => foldLatticeWindow(referenceGroup as WallpaperGroup, uvWindow),
+    [referenceGroup, uvWindow],
+  );
+
+  // Pen sampling density is px-based (MIN_STEP_PX on the canvas), so zooming out
+  // keeps strokes smooth instead of stretching a fixed uv step.
+  const minStepUv = useMemo(() => {
+    const sx = Math.hypot(toCanvas.a, toCanvas.b);
+    const sy = Math.hypot(toCanvas.c, toCanvas.d);
+    return MIN_STEP_PX / Math.max(sx, sy);
+  }, [toCanvas]);
+
   // Pointer → internal canvas coords (handles CSS scaling of the fixed-size svg).
   const pointerCanvas = (e: React.PointerEvent): Vec2 => {
     const rect = svgRef.current!.getBoundingClientRect();
@@ -122,6 +261,17 @@ export default function DrawPane({
   };
   const pointerUv = (e: React.PointerEvent): Vec2 =>
     applyToPoint(toUv, pointerCanvas(e));
+  // Anchor positions (stroke starts, shape corners, circle centre/radius) snap;
+  // freehand pen SAMPLES stay raw so the pen never feels sticky mid-stroke.
+  const pointerUvSnapped = (e: React.PointerEvent): Vec2 => {
+    const raw = pointerUv(e);
+    if (!snapOn) return raw;
+    return (
+      snapToTargets({ uv: raw, targets: snapTargets, toCanvas, radiusPx: SNAP_PX })
+        ?.uv ?? raw
+    );
+  };
+
 
   const commit = (next: GalleryMotif) => {
     history.current.push(motif);
@@ -135,14 +285,29 @@ export default function DrawPane({
   // single commit so Undo removes it atomically.
   const commitShape = (pts: Vec2[]) => {
     if (pts.length < 2) return;
-    const closed = tool === 'rect' || tool === 'ellipse';
+    const closed = tool === 'rect' || tool === 'ellipse' || tool === 'circle';
     const group = referenceGroup as WallpaperGroup;
+    if (overlapActive) {
+      // Stored raw (reference uv, not folded): the renderer depth-sorts its copies.
+      if (closed && fillMode) {
+        if (pts.length < 3) return;
+        const fill: Fill = { pts, color, layer: 'overlap' };
+        commit({ ...motif, fills: [...(motif.fills ?? []), fill] });
+      } else {
+        const stroke: Stroke = { pts, width, color, closed, layer: 'overlap' };
+        commit({ ...motif, strokes: [...(motif.strokes ?? []), stroke] });
+      }
+      return;
+    }
     if (closed && fillMode) {
-      const fills: Fill[] = foldFillUv(pts, group).map((pp) => ({ pts: pp, color }));
+      const fills: Fill[] = foldFillUv(pts, group, latticeWindow).map((pp) => ({
+        pts: pp,
+        color,
+      }));
       if (fills.length === 0) return;
       commit({ ...motif, fills: [...(motif.fills ?? []), ...fills] });
     } else {
-      const strokes: Stroke[] = foldShapeUv(pts, closed, group).map((s) => ({
+      const strokes: Stroke[] = foldShapeUv(pts, closed, group, latticeWindow).map((s) => ({
         pts: s.pts,
         width,
         color,
@@ -157,34 +322,42 @@ export default function DrawPane({
     e.preventDefault();
     svgRef.current?.setPointerCapture(e.pointerId);
     drawing.current = true;
-    setDraft([pointerUv(e)]);
+    setDraftSynced([pointerUvSnapped(e)]);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!drawing.current) return;
-    const p = pointerUv(e);
-    setDraft((prev) => {
-      if (!prev) return [p];
-      if (tool === 'pen') {
-        const last = prev[prev.length - 1];
-        if (prev.length >= MAX_PEN_POINTS || dist(last, p) < MIN_STEP) return prev;
-        return [...prev, p];
-      }
-      // line / rect / ellipse: anchor + moving endpoint
-      return [prev[0], p];
-    });
+    const p = tool === 'pen' ? pointerUv(e) : pointerUvSnapped(e);
+    const prev = draftRef.current;
+    if (!prev) {
+      setDraftSynced([p]);
+      return;
+    }
+    if (tool === 'pen') {
+      const last = prev[prev.length - 1];
+      if (prev.length >= MAX_PEN_POINTS || dist(last, p) < minStepUv) return;
+      setDraftSynced([...prev, p]);
+      return;
+    }
+    // line / rect / ellipse / circle: anchor + moving endpoint
+    setDraftSynced([prev[0], p]);
   };
 
   const onPointerUp = () => {
     if (!drawing.current) return;
     drawing.current = false;
-    const d = draft;
-    setDraft(null);
+    const d = draftRef.current;
+    setDraftSynced(null);
     if (!d || d.length === 0) return;
     if (tool === 'pen' || tool === 'line') {
       commitShape(d);
     } else if (d.length >= 2) {
-      const pts = tool === 'rect' ? rectPts(d[0], d[1]) : ellipsePts(d[0], d[1]);
+      const pts =
+        tool === 'rect'
+          ? rectPts(d[0], d[1])
+          : tool === 'circle'
+            ? circlePts(d[0], d[1], toCanvas, toUv)
+            : ellipsePts(d[0], d[1]);
       commitShape(pts);
     }
   };
@@ -203,14 +376,16 @@ export default function DrawPane({
   // the cell ops, so reflections appear live without a re-tile.
   const draftCanvasPaths = useMemo(() => {
     if (!draft || draft.length === 0) return [];
-    const closed = tool === 'rect' || tool === 'ellipse';
+    const closed = tool === 'rect' || tool === 'ellipse' || tool === 'circle';
     const draftUv =
       tool === 'pen' || tool === 'line'
         ? draft
         : draft.length >= 2
           ? tool === 'rect'
             ? rectPts(draft[0], draft[1])
-            : ellipsePts(draft[0], draft[1])
+            : tool === 'circle'
+              ? circlePts(draft[0], draft[1], toCanvas, toUv)
+              : ellipsePts(draft[0], draft[1])
           : draft;
     const mapPts = (pts: Vec2[], op?: Affine2D): Vec2[] =>
       pts.map((p) => applyToPoint(toCanvas, op ? applyToPoint(op, p) : p));
@@ -221,13 +396,14 @@ export default function DrawPane({
         .slice(1)
         .map((op) => ({ d: pathD(mapPts(draftUv, op), closed), faint: true })),
     ];
-  }, [draft, tool, toCanvas, cellOps]);
+  }, [draft, tool, toCanvas, toUv, cellOps]);
 
   const TOOLS: { id: Tool; label: string }[] = [
     { id: 'pen', label: '✎ Pen' },
     { id: 'line', label: '╱ Line' },
     { id: 'rect', label: '▭ Rect' },
     { id: 'ellipse', label: '◯ Ellipse' },
+    { id: 'circle', label: '◎ Circle' },
   ];
 
   return (
@@ -249,6 +425,25 @@ export default function DrawPane({
             {t.label}
           </button>
         ))}
+        {/* Canvas window: zoom between the region close-up and multi-cell views. */}
+        <div className="ml-auto flex items-center gap-0.5 rounded bg-white/6 p-0.5">
+          {ZOOMS.map((z) => (
+            <button
+              key={z.id}
+              type="button"
+              onClick={() => setZoom(z.id)}
+              aria-pressed={zoom === z.id}
+              title="canvas window — how many cells the canvas shows"
+              className={`rounded px-1.5 py-0.5 text-[10px] transition-colors ${
+                zoom === z.id
+                  ? 'bg-white/90 text-black'
+                  : 'text-white/70 hover:bg-white/15'
+              }`}
+            >
+              {z.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -287,6 +482,39 @@ export default function DrawPane({
           />
           fill
         </label>
+        <button
+          type="button"
+          onClick={() => setSnapOn((s) => !s)}
+          aria-pressed={snapOn}
+          title="snap anchors to lattice points, rotation centres and mirror axes"
+          className={`rounded px-2 py-1 text-[11px] transition-colors ${
+            snapOn
+              ? 'bg-white/90 text-black'
+              : 'bg-white/10 text-white/80 hover:bg-white/20'
+          }`}
+        >
+          ⌖ Snap
+        </button>
+        <button
+          type="button"
+          onClick={() => setOverlapMode((s) => !s)}
+          aria-pressed={overlapActive}
+          disabled={!overlapOk}
+          title={
+            overlapOk
+              ? 'stack copies painter-style (a front copy hides the copy behind it, e.g. seigaiha fans) instead of folding ink into the unit'
+              : 'overlap stacking needs a single recede direction — rotations / crossing mirrors of this group would reorder the copies (available for p1, pm, pg, cm)'
+          }
+          className={`rounded px-2 py-1 text-[11px] transition-colors ${
+            overlapActive
+              ? 'bg-white/90 text-black'
+              : overlapOk
+                ? 'bg-white/10 text-white/80 hover:bg-white/20'
+                : 'bg-white/5 text-white/30 cursor-not-allowed'
+          }`}
+        >
+          ⧉ Overlap
+        </button>
         <button
           type="button"
           onClick={undo}

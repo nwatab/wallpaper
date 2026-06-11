@@ -18,9 +18,41 @@ import type { Vec2 } from './types';
 
 const v = (x: number, y: number): Vec2 => ({ x, y });
 
-export type Stroke = { pts: Vec2[]; width: number; color: string; closed?: boolean };
-export type Fill = { pts: Vec2[]; color: string };
+// `layer: 'overlap'` marks a shape stored AS DRAWN (reference uv, not folded into the
+// asymmetric unit): its orbit copies composite painter-style by per-copy depth — the
+// motifLayer:'overlap' policy — so a whole copy can occlude the copy behind it
+// (seigaiha's front fan hiding the back fan's rings). Unset ⇒ unit-contained ink,
+// composited with the clip policy. Folding cannot express inter-copy occlusion: it
+// flattens by GESTURE, so a later gesture's orbit paints over every earlier gesture's
+// orbit at once — only per-copy depth sorting recovers the by-copy stacking.
+export type MotifShapeLayer = 'overlap';
+export type Stroke = {
+  pts: Vec2[];
+  width: number;
+  color: string;
+  closed?: boolean;
+  layer?: MotifShapeLayer;
+};
+export type Fill = { pts: Vec2[]; color: string; layer?: MotifShapeLayer };
 export type GalleryMotif = { fills?: Fill[]; strokes?: Stroke[] };
+
+// Split a motif by compositing layer: `base` (unit-contained, clip policy) and
+// `overlap` (as-drawn, per-copy depth policy). Pure; preserves shape order.
+export const splitByLayer = (
+  m: GalleryMotif,
+): { base: GalleryMotif; overlap: GalleryMotif } => ({
+  base: {
+    fills: m.fills?.filter((f) => f.layer !== 'overlap'),
+    strokes: m.strokes?.filter((s) => s.layer !== 'overlap'),
+  },
+  overlap: {
+    fills: m.fills?.filter((f) => f.layer === 'overlap'),
+    strokes: m.strokes?.filter((s) => s.layer === 'overlap'),
+  },
+});
+
+export const hasShapes = (m: GalleryMotif): boolean =>
+  (m.fills?.length ?? 0) > 0 || (m.strokes?.length ?? 0) > 0;
 
 const STROKE_W = 0.045;
 

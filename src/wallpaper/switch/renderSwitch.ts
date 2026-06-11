@@ -1,6 +1,6 @@
-import type { Affine2D, DebugOptions, Pose, Rect, Scene, UnitTemplate, WallpaperGroup } from '../types';
+import type { Affine2D, DebugOptions, Pose, Rect, Scene, UnitTemplate, Vec2, WallpaperGroup } from '../types';
 import { tile } from '../engine/tile';
-import { basisToMatrix, compose, invert, rotateDeg, scaleUniform, toSvgMatrix } from '../affine';
+import { applyToPoint, basisToMatrix, compose, invert, rotateDeg, scaleUniform, toSvgMatrix } from '../affine';
 import { toSVG } from '@/lib/coords/surfaces';
 import { extentCenter, viewTransform } from '@/lib/coords/view';
 import type { GalleryMotif } from '../galleryMotifs';
@@ -28,6 +28,12 @@ const poseFromMatrix = (m: Affine2D): Pose => ({
 const renderTemplateSvg = (args: {
   template: UnitTemplate;
   motifSvg: string;
+  // The motif's as-drawn layer:'overlap' shapes (placeUserMotif split): the same orbit,
+  // composited painter-style by per-copy depth ON TOP of the clipped base layer — the
+  // only compositing that lets a whole copy occlude the copy behind it (seigaiha).
+  overlapMotifSvg?: string;
+  // Depth orientation for that layer (derived per group by overlapGate).
+  overlapDepthRotationDeg?: number;
   viewport: Rect;
   pose: Pose;
   debugOptions?: DebugOptions;
@@ -66,6 +72,17 @@ const renderTemplateSvg = (args: {
   };
 
   const motif = renderMotifLayer(scene, poseMatrix);
+  const overlapMotif = args.overlapMotifSvg
+    ? renderMotifLayer(
+        {
+          ...scene,
+          motifSvg: args.overlapMotifSvg,
+          motifLayer: 'overlap',
+          depthRotationDeg: args.overlapDepthRotationDeg ?? 0,
+        },
+        poseMatrix,
+      )
+    : null;
   const overlay = renderOverlayLayer(args.debugOptions, {
     opsInCellXy,
     poseMatrix,
@@ -77,8 +94,10 @@ const renderTemplateSvg = (args: {
     ? renderSymmetryElements({ opsInCellXy, basis, poseMatrix, viewBox })
     : '';
 
-  const inner = `${motif.defs ? `<defs>${motif.defs}</defs>` : ''}
+  const defs = `${motif.defs}${overlapMotif?.defs ?? ''}`;
+  const inner = `${defs ? `<defs>${defs}</defs>` : ''}
       <g data-layer="motif">${motif.body}</g>
+      ${overlapMotif ? `<g data-layer="motif-overlap">${overlapMotif.body}</g>` : ''}
       ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
       ${symmetry}`;
 
@@ -105,9 +124,10 @@ const renderTemplateSvg = (args: {
       width="${vb.w}"
       height="${vb.h}"
     >
-      ${motif.defs ? `<defs>${motif.defs}</defs>` : ''}
+      ${defs ? `<defs>${defs}</defs>` : ''}
       <g data-layer="view" transform="${toSvgMatrix(view)}">
         <g data-layer="motif">${motif.body}</g>
+        ${overlapMotif ? `<g data-layer="motif-overlap">${overlapMotif.body}</g>` : ''}
         ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
         ${symmetry}
       </g>
@@ -141,6 +161,8 @@ export const renderGroupSvg = (args: {
   return renderTemplateSvg({
     template: r.template,
     motifSvg: r.motifSvg,
+    overlapMotifSvg: r.overlapMotifSvg,
+    overlapDepthRotationDeg: r.overlapDepthRotationDeg,
     viewport: args.viewport,
     pose,
     debugOptions: args.debugOptions,
@@ -163,18 +185,26 @@ export const renderRegionPreview = (args: {
   group: string;
   motif: GalleryMotif;
   canvas: CanvasRect;
+  // Optional uv polygon fitted to the canvas instead of the fundamental region —
+  // the draw pane's zoom levels (unit cell, 2×2 cells). Default: the region.
+  windowUv?: Vec2[];
   showSymmetryElements?: boolean;
   debugOptions?: DebugOptions;
 }): {
   svg: string;
   mapping: CanvasMapping;
+  // The placed template's lattice basis — the uv↔XY adapter snap-target derivation needs.
+  basis: { a: Vec2; b: Vec2 };
   toUv: Affine2D;
   toCanvas: Affine2D;
 } => {
   const r = placeUserMotif(args.group as WallpaperGroup, args.motif);
   const B = basisToMatrix(r.template.basis);
-  // Fit the region (XY) into the canvas → a uniform similarity (scale + translate).
-  const mapping = buildCanvasMapping(r.template.regionXy, args.canvas);
+  // Fit the window (XY) into the canvas → a uniform similarity (scale + translate).
+  const windowXy = args.windowUv
+    ? args.windowUv.map((p) => applyToPoint(B, p))
+    : r.template.regionXy;
+  const mapping = buildCanvasMapping(windowXy, args.canvas);
   const pose: Pose = {
     scale: mapping.toCanvas.a,
     rotationDeg: 0,
@@ -189,6 +219,8 @@ export const renderRegionPreview = (args: {
   const svg = renderTemplateSvg({
     template: r.template,
     motifSvg: r.motifSvg,
+    overlapMotifSvg: r.overlapMotifSvg,
+    overlapDepthRotationDeg: r.overlapDepthRotationDeg,
     viewport,
     pose,
     debugOptions: args.debugOptions,
@@ -198,6 +230,7 @@ export const renderRegionPreview = (args: {
   return {
     svg,
     mapping,
+    basis: r.template.basis,
     // canvas → XY → uv  and  uv → XY → canvas.
     toUv: compose(invert(B), mapping.fromCanvas),
     toCanvas: compose(mapping.toCanvas, B),

@@ -155,8 +155,18 @@ export default function DrawPane({
   const [draft, setDraft] = useState<Vec2[] | null>(null);
 
   const drawing = useRef(false);
+  // The draft's source of truth for the GESTURE: pointer events can all land inside one
+  // React batch (fast synthetic input), where the `draft` STATE closure in onPointerUp
+  // is stale — committing from it silently dropped the gesture. The ref is updated
+  // synchronously per event; the state only drives the live preview render.
+  const draftRef = useRef<Vec2[] | null>(null);
   const history = useRef<GalleryMotif[]>([]);
   const svgRef = useRef<SVGSVGElement>(null);
+
+  const setDraftSynced = (value: Vec2[] | null) => {
+    draftRef.current = value;
+    setDraft(value);
+  };
 
   // The preview (tiled, clipped, with symmetry overlay) + the px↔uv affines.
   const preview = useMemo(
@@ -301,29 +311,32 @@ export default function DrawPane({
     e.preventDefault();
     svgRef.current?.setPointerCapture(e.pointerId);
     drawing.current = true;
-    setDraft([pointerUvSnapped(e)]);
+    setDraftSynced([pointerUvSnapped(e)]);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!drawing.current) return;
     const p = tool === 'pen' ? pointerUv(e) : pointerUvSnapped(e);
-    setDraft((prev) => {
-      if (!prev) return [p];
-      if (tool === 'pen') {
-        const last = prev[prev.length - 1];
-        if (prev.length >= MAX_PEN_POINTS || dist(last, p) < minStepUv) return prev;
-        return [...prev, p];
-      }
-      // line / rect / ellipse / circle: anchor + moving endpoint
-      return [prev[0], p];
-    });
+    const prev = draftRef.current;
+    if (!prev) {
+      setDraftSynced([p]);
+      return;
+    }
+    if (tool === 'pen') {
+      const last = prev[prev.length - 1];
+      if (prev.length >= MAX_PEN_POINTS || dist(last, p) < minStepUv) return;
+      setDraftSynced([...prev, p]);
+      return;
+    }
+    // line / rect / ellipse / circle: anchor + moving endpoint
+    setDraftSynced([prev[0], p]);
   };
 
   const onPointerUp = () => {
     if (!drawing.current) return;
     drawing.current = false;
-    const d = draft;
-    setDraft(null);
+    const d = draftRef.current;
+    setDraftSynced(null);
     if (!d || d.length === 0) return;
     if (tool === 'pen' || tool === 'line') {
       commitShape(d);

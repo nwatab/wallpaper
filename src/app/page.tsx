@@ -591,15 +591,25 @@ export default function Page() {
                           aria-pressed={active}
                           className={`group relative aspect-square overflow-hidden rounded-md bg-white transition-shadow ${
                             active
-                              ? 'ring-2 ring-white'
+                              ? 'ring-2 ring-white ring-offset-2 ring-offset-transparent'
                               : 'ring-1 ring-white/15 hover:ring-white/40'
                           }`}
                         >
                           <SwatchImage html={swatchSvgs[t.id]} />
+                          {active && (
+                            <span
+                              aria-hidden="true"
+                              className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/80 text-[10px] leading-none text-white ring-1 ring-white/90"
+                            >
+                              ✓
+                            </span>
+                          )}
                         </button>
                         <span
                           className={`text-[9px] leading-tight text-center break-words transition-opacity ${
-                            active ? 'opacity-100' : 'opacity-60'
+                            active
+                              ? 'font-semibold opacity-100'
+                              : 'opacity-60'
                           }`}
                         >
                           {t.label}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { unitTemplates } from '@/wallpaper/unitTemplates';
 import { renderWallpaperSvg } from '@/wallpaper/renderSvg';
 import type { GalleryMotif } from '@/wallpaper/galleryMotifs';
@@ -33,6 +33,19 @@ import WarpControls from './WarpControls';
 
 const hasInk = (m: GalleryMotif): boolean =>
   (m.fills?.length ?? 0) > 0 || (m.strokes?.length ?? 0) > 0;
+
+// A gallery swatch's SVG, isolated so selectedId never flows into it. Its only prop is the
+// byte-identical swatch html (computed once in `swatchSvgs`), so on a pattern switch `memo`
+// bails and React keeps the existing svg DOM instead of re-committing innerHTML — which
+// otherwise recreates all 27 swatch <svg>s and triggers an ~85k-element style recalc.
+const SwatchImage = memo(function SwatchImage({ html }: { html: string }) {
+  return (
+    <div
+      className="absolute inset-0 [&>svg]:h-full [&>svg]:w-full"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+});
 
 const DEFAULT_SCALE = 120;
 const DEFAULT_ROTATION_DEG = 0;
@@ -560,10 +573,7 @@ export default function Page() {
                               : 'ring-1 ring-white/15 hover:ring-white/40'
                           }`}
                         >
-                          <div
-                            className="absolute inset-0 [&>svg]:h-full [&>svg]:w-full"
-                            dangerouslySetInnerHTML={{ __html: swatchSvgs[t.id] }}
-                          />
+                          <SwatchImage html={swatchSvgs[t.id]} />
                         </button>
                         <span
                           className={`text-[9px] leading-tight text-center break-words transition-opacity ${

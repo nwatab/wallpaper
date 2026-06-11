@@ -50,6 +50,19 @@ describe('snapTargetsUv', () => {
     expect(hasPoint(t, { x: 1, y: 1 })).toBe(true); // lattice point
   });
 
+  it('pg: neighbour cells’ region vertices snap too (zoomed-out windows)', () => {
+    // (1, 1.5) = unit vertex (0, 0.5) + lattice (1, 1) — pg has no rotation centres,
+    // so only the translated-vertex family can supply this point.
+    const t = targetsOf('pg');
+    expect(hasPoint(t, { x: 1, y: 1.5 })).toBe(false); // outside the ±0.2 window
+    const wide = snapTargetsUv({
+      group: 'pg',
+      basis: placeUserMotif('pg', {}).template.basis,
+      window: { min: { x: -0.6, y: -0.6 }, max: { x: 1.6, y: 1.6 } },
+    });
+    expect(hasPoint(wide, { x: 1, y: 1.5 })).toBe(true);
+  });
+
   it('p1: lattice points only (no symmetry elements)', () => {
     const t = targetsOf('p1');
     expect(t.lines).toHaveLength(0);

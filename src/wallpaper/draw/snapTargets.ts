@@ -150,13 +150,16 @@ export const snapTargetsUv = (args: {
     if (inWindow(p)) points.set(pointKey(p), p);
   };
 
-  // Lattice points + the unit's own vertices.
-  for (let i = Math.floor(window.min.x); i <= Math.ceil(window.max.x); i++) {
-    for (let j = Math.floor(window.min.y); j <= Math.ceil(window.max.y); j++) {
+  // Lattice points + the unit's vertices in EVERY cell of the window — the zoomed-out
+  // windows show neighbour cells, whose identity-copy region corners must snap exactly
+  // like the home cell's (lattice points/centres/axes already cover the whole window).
+  const unit = asymmetricUnitUv[group];
+  for (let i = Math.floor(window.min.x) - 1; i <= Math.ceil(window.max.x); i++) {
+    for (let j = Math.floor(window.min.y) - 1; j <= Math.ceil(window.max.y); j++) {
       addPoint({ x: i, y: j });
+      for (const v of unit) addPoint({ x: v.x + i, y: v.y + j });
     }
   }
-  for (const v of asymmetricUnitUv[group]) addPoint(v);
 
   const lines = new Map<string, SnapLine>();
   const halfDiag =

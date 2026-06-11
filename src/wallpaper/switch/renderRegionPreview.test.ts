@@ -84,4 +84,28 @@ describe('renderRegionPreview', () => {
     expect(px.y).toBeGreaterThan(0);
     expect(px.y).toBeLessThan(canvas.height);
   });
+
+  it('fits a requested uv window (zoomed-out canvas) instead of the region', () => {
+    const cell2: Vec2[] = [
+      { x: -0.5, y: -0.5 },
+      { x: 1.5, y: -0.5 },
+      { x: 1.5, y: 1.5 },
+      { x: -0.5, y: 1.5 },
+    ];
+    const r = renderRegionPreview({
+      group: 'p4m',
+      motif: {},
+      canvas,
+      windowUv: cell2,
+    });
+    // Every window corner lands inside the padded canvas; toUv/toCanvas stay inverses.
+    for (const corner of cell2) {
+      const px = applyToPoint(r.toCanvas, corner);
+      expect(px.x).toBeGreaterThanOrEqual(canvas.padding - 1e-6);
+      expect(px.x).toBeLessThanOrEqual(canvas.width - canvas.padding + 1e-6);
+      expect(px.y).toBeGreaterThanOrEqual(canvas.padding - 1e-6);
+      expect(px.y).toBeLessThanOrEqual(canvas.height - canvas.padding + 1e-6);
+      expect(close(applyToPoint(r.toUv, px), corner)).toBe(true);
+    }
+  });
 });

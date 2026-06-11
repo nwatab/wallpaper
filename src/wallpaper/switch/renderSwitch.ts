@@ -1,6 +1,6 @@
 import type { Affine2D, DebugOptions, Pose, Rect, Scene, UnitTemplate, Vec2, WallpaperGroup } from '../types';
 import { tile } from '../engine/tile';
-import { basisToMatrix, compose, invert, rotateDeg, scaleUniform, toSvgMatrix } from '../affine';
+import { applyToPoint, basisToMatrix, compose, invert, rotateDeg, scaleUniform, toSvgMatrix } from '../affine';
 import { toSVG } from '@/lib/coords/surfaces';
 import { extentCenter, viewTransform } from '@/lib/coords/view';
 import type { GalleryMotif } from '../galleryMotifs';
@@ -163,6 +163,9 @@ export const renderRegionPreview = (args: {
   group: string;
   motif: GalleryMotif;
   canvas: CanvasRect;
+  // Optional uv polygon fitted to the canvas instead of the fundamental region —
+  // the draw pane's zoom levels (unit cell, 2×2 cells). Default: the region.
+  windowUv?: Vec2[];
   showSymmetryElements?: boolean;
   debugOptions?: DebugOptions;
 }): {
@@ -175,8 +178,11 @@ export const renderRegionPreview = (args: {
 } => {
   const r = placeUserMotif(args.group as WallpaperGroup, args.motif);
   const B = basisToMatrix(r.template.basis);
-  // Fit the region (XY) into the canvas → a uniform similarity (scale + translate).
-  const mapping = buildCanvasMapping(r.template.regionXy, args.canvas);
+  // Fit the window (XY) into the canvas → a uniform similarity (scale + translate).
+  const windowXy = args.windowUv
+    ? args.windowUv.map((p) => applyToPoint(B, p))
+    : r.template.regionXy;
+  const mapping = buildCanvasMapping(windowXy, args.canvas);
   const pose: Pose = {
     scale: mapping.toCanvas.a,
     rotationDeg: 0,

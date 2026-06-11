@@ -9,7 +9,11 @@ import {
   type Fill,
 } from '@/wallpaper/galleryMotifs';
 import { getGroup } from '@/wallpaper/groups';
-import { foldFillUv, foldShapeUv } from '@/wallpaper/draw/foldIntoRegion';
+import {
+  foldFillUv,
+  foldLatticeWindow,
+  foldShapeUv,
+} from '@/wallpaper/draw/foldIntoRegion';
 import { snapTargetsUv, snapToTargets } from '@/wallpaper/draw/snapTargets';
 import { renderRegionPreview } from '@/wallpaper/switch/renderSwitch';
 
@@ -27,11 +31,42 @@ import { renderRegionPreview } from '@/wallpaper/switch/renderSwitch';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CANVAS = { width: 360, height: 360, padding: 28 };
-const MAX_PEN_POINTS = 240;
-const MIN_STEP = 0.006; // min uv distance between captured pen samples
+const MAX_PEN_POINTS = 480;
+const MIN_STEP_PX = 3; // min canvas-px distance between captured pen samples
 const SNAP_PX = 12; // snap radius, in internal canvas px
 
 type Tool = 'pen' | 'line' | 'rect' | 'ellipse' | 'circle';
+
+// Canvas window: which uv neighbourhood the canvas shows. 'region' (the fundamental
+// region's bbox, the original close-up) for single-unit detail; 'cell' / '2×2' zoom out
+// so one gesture can span copy and cell boundaries (a multi-cell arc folds into the
+// unit just like any stroke — the fold's lattice window is derived from the window).
+type Zoom = 'region' | 'cell' | 'cell4';
+
+const ZOOMS: { id: Zoom; label: string }[] = [
+  { id: 'region', label: 'Region' },
+  { id: 'cell', label: 'Cell' },
+  { id: 'cell4', label: '2×2' },
+];
+
+// The fitted uv polygon per zoom (undefined ⇒ the region itself, the default fit).
+// 2×2 is centred on the home cell so the unit stays in the middle of the canvas.
+const zoomWindowUv = (zoom: Zoom): Vec2[] | undefined =>
+  zoom === 'cell'
+    ? [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 1, y: 1 },
+        { x: 0, y: 1 },
+      ]
+    : zoom === 'cell4'
+      ? [
+          { x: -0.5, y: -0.5 },
+          { x: 1.5, y: -0.5 },
+          { x: 1.5, y: 1.5 },
+          { x: -0.5, y: 1.5 },
+        ]
+      : undefined;
 
 const PALETTE = ['#1c3f7a', '#2f6fb0', '#b5402a', '#1f7a52', '#222222'];
 
@@ -109,6 +144,7 @@ export default function DrawPane({
   const [width, setWidth] = useState(0.04);
   const [fillMode, setFillMode] = useState(false);
   const [snapOn, setSnapOn] = useState(true);
+  const [zoom, setZoom] = useState<Zoom>('region');
   const [draft, setDraft] = useState<Vec2[] | null>(null);
 
   const drawing = useRef(false);
@@ -122,10 +158,11 @@ export default function DrawPane({
         group: referenceGroup,
         motif,
         canvas: CANVAS,
+        windowUv: zoomWindowUv(zoom),
         showSymmetryElements,
         debugOptions,
       }),
-    [referenceGroup, motif, showSymmetryElements, debugOptions],
+    [referenceGroup, motif, zoom, showSymmetryElements, debugOptions],
   );
 
   // Cell ops (reference uv) for the live draft reflections.
@@ -137,17 +174,16 @@ export default function DrawPane({
   const toUv = preview.toUv;
   const toCanvas = preview.toCanvas;
 
-  // Snap targets (lattice points / rotation centres / mirror axes / unit vertices)
-  // over the uv window the canvas can reach. The derivation is memoised per
-  // (group, window) inside snapTargetsUv, so this recompute on commit is a cache hit.
-  const snapTargets = useMemo(() => {
+  // The uv window the canvas can reach (its corners through toUv) — the domain the
+  // snap targets and the fold's lattice window are derived over.
+  const uvWindow = useMemo(() => {
     const corners = [
       { x: 0, y: 0 },
       { x: CANVAS.width, y: 0 },
       { x: CANVAS.width, y: CANVAS.height },
       { x: 0, y: CANVAS.height },
     ].map((p) => applyToPoint(toUv, p));
-    const window = {
+    return {
       min: {
         x: Math.min(...corners.map((p) => p.x)),
         y: Math.min(...corners.map((p) => p.y)),
@@ -157,12 +193,35 @@ export default function DrawPane({
         y: Math.max(...corners.map((p) => p.y)),
       },
     };
-    return snapTargetsUv({
-      group: referenceGroup as WallpaperGroup,
-      basis: preview.basis,
-      window,
-    });
-  }, [referenceGroup, preview.basis, toUv]);
+  }, [toUv]);
+
+  // Snap targets (lattice points / rotation centres / mirror axes / unit vertices)
+  // over the canvas window. Memoised per (group, window) inside snapTargetsUv, so
+  // this recompute on commit is a cache hit.
+  const snapTargets = useMemo(
+    () =>
+      snapTargetsUv({
+        group: referenceGroup as WallpaperGroup,
+        basis: preview.basis,
+        window: uvWindow,
+      }),
+    [referenceGroup, preview.basis, uvWindow],
+  );
+
+  // Candidate lattice window for the fold — wide enough for whatever the current
+  // canvas window can reach (zoomed-out windows need more than the ±2 baseline).
+  const latticeWindow = useMemo(
+    () => foldLatticeWindow(referenceGroup as WallpaperGroup, uvWindow),
+    [referenceGroup, uvWindow],
+  );
+
+  // Pen sampling density is px-based (MIN_STEP_PX on the canvas), so zooming out
+  // keeps strokes smooth instead of stretching a fixed uv step.
+  const minStepUv = useMemo(() => {
+    const sx = Math.hypot(toCanvas.a, toCanvas.b);
+    const sy = Math.hypot(toCanvas.c, toCanvas.d);
+    return MIN_STEP_PX / Math.max(sx, sy);
+  }, [toCanvas]);
 
   // Pointer → internal canvas coords (handles CSS scaling of the fixed-size svg).
   const pointerCanvas = (e: React.PointerEvent): Vec2 => {
@@ -201,11 +260,14 @@ export default function DrawPane({
     const closed = tool === 'rect' || tool === 'ellipse' || tool === 'circle';
     const group = referenceGroup as WallpaperGroup;
     if (closed && fillMode) {
-      const fills: Fill[] = foldFillUv(pts, group).map((pp) => ({ pts: pp, color }));
+      const fills: Fill[] = foldFillUv(pts, group, latticeWindow).map((pp) => ({
+        pts: pp,
+        color,
+      }));
       if (fills.length === 0) return;
       commit({ ...motif, fills: [...(motif.fills ?? []), ...fills] });
     } else {
-      const strokes: Stroke[] = foldShapeUv(pts, closed, group).map((s) => ({
+      const strokes: Stroke[] = foldShapeUv(pts, closed, group, latticeWindow).map((s) => ({
         pts: s.pts,
         width,
         color,
@@ -230,7 +292,7 @@ export default function DrawPane({
       if (!prev) return [p];
       if (tool === 'pen') {
         const last = prev[prev.length - 1];
-        if (prev.length >= MAX_PEN_POINTS || dist(last, p) < MIN_STEP) return prev;
+        if (prev.length >= MAX_PEN_POINTS || dist(last, p) < minStepUv) return prev;
         return [...prev, p];
       }
       // line / rect / ellipse / circle: anchor + moving endpoint
@@ -320,6 +382,25 @@ export default function DrawPane({
             {t.label}
           </button>
         ))}
+        {/* Canvas window: zoom between the region close-up and multi-cell views. */}
+        <div className="ml-auto flex items-center gap-0.5 rounded bg-white/6 p-0.5">
+          {ZOOMS.map((z) => (
+            <button
+              key={z.id}
+              type="button"
+              onClick={() => setZoom(z.id)}
+              aria-pressed={zoom === z.id}
+              title="canvas window — how many cells the canvas shows"
+              className={`rounded px-1.5 py-0.5 text-[10px] transition-colors ${
+                zoom === z.id
+                  ? 'bg-white/90 text-black'
+                  : 'text-white/70 hover:bg-white/15'
+              }`}
+            >
+              {z.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

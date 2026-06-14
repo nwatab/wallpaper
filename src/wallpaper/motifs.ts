@@ -1,4 +1,4 @@
-import { galleryMotifSvg } from './galleryMotifs';
+import { galleryMotifSvg, GREEN, GREEN_INK } from './galleryMotifs';
 
 export const motifs: Record<string, string> = {
   // Persian / Chinese / porcelain geometric gallery motifs (geometry-driven; see
@@ -53,11 +53,11 @@ export const motifs: Record<string, string> = {
       
       <!-- 葉っぱ型のモチーフ -->
       <path d="M 0.1 0.2 Q 0.4 0.15 0.45 0.4 Q 0.4 0.65 0.1 0.6 Q 0.25 0.4 0.1 0.2" 
-            fill="lightgreen" stroke="darkgreen" stroke-width="0.02"/>
+            fill="${GREEN}" stroke="${GREEN_INK}" stroke-width="0.02"/>
       
       <!-- 葉の中心線 -->
       <path d="M 0.1 0.2 Q 0.275 0.4 0.1 0.6" 
-            fill="none" stroke="darkgreen" stroke-width="0.015"/>
+            fill="none" stroke="${GREEN_INK}" stroke-width="0.015"/>
       
       <!-- 小さな花 -->
       <circle cx="0.2" cy="0.8" r="0.03" fill="pink" stroke="red" stroke-width="0.01"/>
@@ -100,7 +100,7 @@ export const motifs: Record<string, string> = {
       
       <!-- 下部の装飾線 -->
       <path d="M 0.1 0.4 Q 0.3 0.45 0.5 0.4 Q 0.7 0.35 0.9 0.4" 
-            fill="none" stroke="green" stroke-width="0.02"/>
+            fill="none" stroke="${GREEN_INK}" stroke-width="0.02"/>
       
       <!-- 小さな三角形の装飾 -->
       <path d="M 0.05 0.05 L 0.15 0.05 L 0.1 0.15 Z" fill="orange"/>

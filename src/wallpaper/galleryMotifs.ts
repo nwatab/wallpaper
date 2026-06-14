@@ -146,9 +146,15 @@ const girihStar: GalleryMotif = {
 // #1b p4m — Four-leaf clover (quatrefoil). Same region {4,4,2} triangle as girihStar.
 // Just the UPPER half of one +x-pointing leaf, centred on the bottom-edge mirror (y=0):
 // the D4 orbit reflects it across y=0 into a full petal, then the 4-fold rotation repeats
-// it on the ±x / ±y axes — a four-leaf clover at every 4-fold centre. A small iron-red pip
-// sits at the lattice-corner centre and a diamond at the cell centre. p4m is the maximal
-// square group, so any fill is automatically maximal.
+// it on the ±x / ±y axes — a four-leaf clover at every 4-fold centre, with a dark-green pip
+// at the lattice-corner centre and a diamond at the cell centre. p4m is the maximal square
+// group, so any fill is automatically maximal.
+//
+// Shared CELADON-GREEN glaze for the green motifs — the p4m clover here, plus the pm leaf and
+// pg arrow's decorative stroke in motifs.ts — so all three read as ONE green, not three
+// near-misses. Exported for motifs.ts; the porcelain plates keep INK / INK2 / ACCENT.
+export const GREEN = '#5dcaa5'; // celadon fill
+export const GREEN_INK = '#0f6e56'; // dark-green line / outline / centres
 const clover: GalleryMotif = {
   fills: [
     {
@@ -156,10 +162,10 @@ const clover: GalleryMotif = {
         v(0.06, 0), v(0.11, 0.06), v(0.17, 0.115), v(0.25, 0.15),
         v(0.34, 0.15), v(0.41, 0.105), v(0.46, 0.04), v(0.48, 0),
       ],
-      color: INK2,
+      color: GREEN,
     },
-    { pts: [v(0, 0), v(0.05, 0), v(0.04, 0.04)], color: ACCENT },
-    { pts: [v(0.5, 0.5), v(0.5, 0.43), v(0.43, 0.43)], color: ACCENT },
+    { pts: [v(0, 0), v(0.05, 0), v(0.04, 0.04)], color: GREEN_INK },
+    { pts: [v(0.5, 0.5), v(0.5, 0.43), v(0.43, 0.43)], color: GREEN_INK },
   ],
   strokes: [
     {
@@ -168,9 +174,9 @@ const clover: GalleryMotif = {
         v(0.34, 0.15), v(0.41, 0.105), v(0.46, 0.04), v(0.48, 0),
       ],
       width: STROKE_W,
-      color: INK,
+      color: GREEN_INK,
     },
-    { pts: [v(0.09, 0), v(0.44, 0)], width: STROKE_W * 0.7, color: INK },
+    { pts: [v(0.09, 0), v(0.44, 0)], width: STROKE_W * 0.7, color: GREEN_INK },
   ],
 };
 

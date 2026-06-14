@@ -13,11 +13,6 @@ import {
 } from '@/wallpaper/switch/shapeFamilies';
 import { renderGroupSvg } from '@/wallpaper/switch/renderSwitch';
 import { detectMaximalGroup } from '@/wallpaper/switch/maximalityReport';
-import {
-  snapshotExportSvg,
-  tileableExportSvg,
-  type ExportState,
-} from '@/wallpaper/export/exportSvg';
 import { cellFromTemplate, cellFromGroup } from '@/wallpaper/export/exportSvg';
 import type { Card } from '@/wallpaper/conformal/primitives';
 import { PRESETS, DEFAULT_PRESET_ID } from '@/wallpaper/conformal/presets';
@@ -25,7 +20,7 @@ import {
   toInternalViewAngleDeg,
   toUserViewAngleDeg,
 } from '@/lib/coords/canonical';
-import { downloadSvg } from './downloadSvg';
+import ExportMenu from './ExportMenu';
 import DrawPane from './DrawPane';
 import WarpPane from './WarpPane';
 import WarpControls from './WarpControls';
@@ -139,11 +134,6 @@ export default function Page() {
   // back. On md+ the panel is always visible (rail/scrim hidden), so this only affects
   // small screens.
   const [panelOpen, setPanelOpen] = useState(false);
-  // Export options. Background defaults to WHITE (patterns like seigaiha rely on the white
-  // showing through); transparent is opt-in. "Include guides" applies to the snapshot only —
-  // the tileable export is always the clean canonical pattern.
-  const [exportTransparent, setExportTransparent] = useState(false);
-  const [includeGuides, setIncludeGuides] = useState(false);
 
   // The toggle-set the current group belongs to (if any) — drives the caption.
   const activeToggle = useMemo(() => {
@@ -293,34 +283,6 @@ export default function Page() {
     showSymmetryElements,
     debugOptions,
   ]);
-
-  // The group label baked into export filenames (gallery → template's group; otherwise the
-  // switcher/draw group).
-  const exportGroup =
-    selectionMode === 'gallery'
-      ? selectedTemplate?.group ?? 'wallpaper'
-      : switchGroup;
-
-  // One ExportState feeds both download buttons; each button invokes its own pure action
-  // (snapshotExportSvg / tileableExportSvg), so the wiring can't silently swap.
-  const exportState: ExportState = {
-    displaySvg: svg,
-    includeGuides,
-    // Warp output is raster (conformal export = PNG, deferred); the SVG export panel is
-    // hidden in that stage, so the SVG-export mode is simply the active selection mode.
-    mode: selectionMode,
-    template: selectedTemplate,
-    group: switchGroup,
-    motif: mode === 'draw' ? userMotif : undefined,
-    background: exportTransparent ? 'transparent' : 'white',
-  };
-  const runExport = (
-    build: (s: ExportState) => string,
-    kind: 'snapshot' | 'tile',
-  ) => {
-    const out = build(exportState);
-    if (out) downloadSvg(out, `wallpaper-${exportGroup}-${mode}-${kind}`);
-  };
 
   const templatesByGroup = useMemo(() => {
     const map = new Map<string, typeof unitTemplates>();
@@ -775,46 +737,6 @@ export default function Page() {
             </div>
           )}
 
-          {/* Export — download the current pattern as a standalone SVG. Hidden in the Warp
-              stage: the warped output is raster (PNG export is a later slice). */}
-          {mode !== 'warp' && (
-          <div className="mt-2 p-3 rounded-xl bg-white/6 border border-white/10 flex flex-col gap-2">
-            <div className="text-xs opacity-85">Export SVG</div>
-            <div className="grid grid-cols-1 gap-1.5">
-              <button
-                type="button"
-                onClick={() => runExport(snapshotExportSvg, 'snapshot')}
-                className="rounded-md px-2 py-1.5 text-xs bg-white/10 text-white/85 hover:bg-white/20 transition-colors"
-              >
-                Download SVG (snapshot)
-              </button>
-              <button
-                type="button"
-                onClick={() => runExport(tileableExportSvg, 'tile')}
-                className="rounded-md px-2 py-1.5 text-xs bg-white/10 text-white/85 hover:bg-white/20 transition-colors"
-              >
-                Download tileable SVG
-              </button>
-            </div>
-            <label className="flex items-center gap-2 text-[11px] opacity-80">
-              <input
-                type="checkbox"
-                checked={exportTransparent}
-                onChange={(e) => setExportTransparent(e.target.checked)}
-              />
-              Transparent background
-            </label>
-            <label className="flex items-center gap-2 text-[11px] opacity-80">
-              <input
-                type="checkbox"
-                checked={includeGuides}
-                onChange={(e) => setIncludeGuides(e.target.checked)}
-              />
-              Include guides (snapshot only)
-            </label>
-          </div>
-          )}
-
           {/* GitHub Link */}
           <div className="mt-auto pt-4">
             <a
@@ -832,6 +754,19 @@ export default function Page() {
           </div>
         </div>
       </aside>
+
+      {/* Export entry — a single Download button pinned to the canvas's top-right (the
+          conventional home for export), opening a preview-led popover. Hidden in the Warp
+          stage: the warped output is raster (PNG export is a later slice). */}
+      {mode !== 'warp' && (
+        <ExportMenu
+          displaySvg={svg}
+          mode={selectionMode}
+          template={selectedTemplate}
+          group={switchGroup}
+          motif={selectionMode === 'draw' ? userMotif : undefined}
+        />
+      )}
     </div>
   );
 }

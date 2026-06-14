@@ -9,7 +9,6 @@ import {
   congruentPresets,
   latticeSections,
   placedUserMotif,
-  referenceGroupOf,
   sameDrawingFrame,
 } from '@/wallpaper/switch/shapeFamilies';
 import { renderGroupSvg } from '@/wallpaper/switch/renderSwitch';
@@ -118,10 +117,6 @@ export default function Page() {
   // The user's drawing (M2), stored in the toggle-set REFERENCE frame so it survives a
   // toggle. Reset when the draw frame (reference region) changes.
   const [userMotif, setUserMotif] = useState<GalleryMotif>({});
-  const drawReference = useMemo(
-    () => referenceGroupOf(switchGroup as WallpaperGroup),
-    [switchGroup],
-  );
 
   // Select a group. Switching WITHIN a toggle set (same drawing frame) keeps the drawing
   // and preset — they re-map to the new member via the placement isometry (the "draw
@@ -138,7 +133,7 @@ export default function Page() {
     'none',
   );
   const [bravaisDisplay, setBravaisDisplay] = useState<'none' | 'all'>('none');
-  const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
+  const [symmetryGuidesExpanded, setSymmetryGuidesExpanded] = useState(false);
   // Mobile: the side panel collapses into a thin full-height rail at the left edge (no
   // hamburger). Tapping the rail pops the panel out; tapping the scrim outside tucks it
   // back. On md+ the panel is always visible (rail/scrim hidden), so this only affects
@@ -508,15 +503,6 @@ export default function Page() {
                   {activeToggle.discriminator.caption}
                 </p>
               )}
-
-              <label className="flex items-center gap-2 text-xs opacity-90">
-                <input
-                  type="checkbox"
-                  checked={showSymmetryElements}
-                  onChange={(e) => setShowSymmetryElements(e.target.checked)}
-                />
-                Show symmetry elements (mirrors / glides / centres)
-              </label>
             </div>
           )}
 
@@ -549,7 +535,7 @@ export default function Page() {
               </div>
 
               <DrawPane
-                referenceGroup={drawReference}
+                group={switchGroup}
                 motif={userMotif}
                 onMotifChange={setUserMotif}
                 showSymmetryElements={showSymmetryElements}
@@ -700,24 +686,40 @@ export default function Page() {
           <div className="mt-2 bg-white/6 border border-white/10 rounded-lg">
             <button
               onClick={() =>
-                setAdvancedOptionsExpanded(!advancedOptionsExpanded)
+                setSymmetryGuidesExpanded(!symmetryGuidesExpanded)
               }
               className={`flex items-center gap-2 w-full p-3 bg-transparent border-none text-inherit text-xs cursor-pointer outline-none text-left ${
-                advancedOptionsExpanded ? 'rounded-t-lg' : 'rounded-lg'
+                symmetryGuidesExpanded ? 'rounded-t-lg' : 'rounded-lg'
               }`}
             >
               <span
                 className={`text-[10px] transition-transform duration-200 ease-in-out ${
-                  advancedOptionsExpanded ? 'rotate-90' : 'rotate-0'
+                  symmetryGuidesExpanded ? 'rotate-90' : 'rotate-0'
                 }`}
               >
                 ▶
               </span>
-              Advanced Options
+              Symmetry guides
             </button>
 
-            {advancedOptionsExpanded && (
+            {symmetryGuidesExpanded && (
               <div className="px-3 pb-3 border-t border-white/8 flex flex-col gap-2">
+                {/* Symmetry-element overlay — only the group-driven views (switcher / draw)
+                    render it; the gallery uses renderWallpaperSvg, which has no overlay. */}
+                {(mode === 'switch' || mode === 'draw') && (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="text-xs opacity-70">Symmetry elements</div>
+                    <label className="flex items-center gap-2 text-xs opacity-90">
+                      <input
+                        type="checkbox"
+                        checked={showSymmetryElements}
+                        onChange={(e) => setShowSymmetryElements(e.target.checked)}
+                      />
+                      Show mirrors / glides / centres
+                    </label>
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-1.5">
                   <div className="text-xs opacity-70">Regions</div>
                   {(

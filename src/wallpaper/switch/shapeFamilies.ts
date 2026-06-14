@@ -291,6 +291,23 @@ export const placedUserMotif = (
   return transformMotif(motifRef, mp.placement);
 };
 
+// Inverse of placedUserMotif: carry a motif drawn in `group`'s OWN region back into the
+// toggle-set reference frame, where the shared user drawing is stored (so a toggle keeps
+// the drawing and re-places it per member). The draw pane previews the SELECTED group, so
+// new marks are captured in that member's frame and must be unplaced before they are
+// merged into the stored (reference-frame) drawing. Identity for the reference member /
+// singletons. placedUserMotif ∘ unplacedUserMotif = id (the placement is an isometry).
+export const unplacedUserMotif = (
+  group: WallpaperGroup,
+  motifInGroup: GalleryMotif,
+): GalleryMotif => {
+  const ref = referenceGroupOf(group);
+  if (ref === group) return motifInGroup;
+  const mp = memberPlacements(ref).find((p) => p.group === group);
+  if (!mp) return motifInGroup;
+  return transformMotif(motifInGroup, invert(mp.placement));
+};
+
 // Cells beyond the home cell that any INK of the motif reaches (≥1) — the seamless
 // export stamps the overlap layer's neighbour wrap this far. Stroke ink extends
 // width/2 past its points (a point overhang of 0.98 with width 0.06 reaches 1.01,

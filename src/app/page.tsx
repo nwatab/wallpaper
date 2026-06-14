@@ -44,12 +44,18 @@ const SwatchImage = memo(function SwatchImage({ html }: { html: string }) {
 const DEFAULT_SCALE = 120;
 const DEFAULT_ROTATION_DEG = 0;
 
-// Scale/Rotation are GLOBAL VIEW STATE — initialised once, never reset by a selection or mode
-// change. "Reset view" returns to these. (First template's defaultPose, falling back to the
-// module defaults.)
-const INITIAL_SCALE = unitTemplates[0]?.defaultPose?.scale ?? DEFAULT_SCALE;
-const INITIAL_ROTATION_DEG =
-  unitTemplates[0]?.defaultPose?.rotationDeg ?? DEFAULT_ROTATION_DEG;
+// A template's `defaultPose` is the single source of "how this pattern is presented": the
+// orientation its gallery thumbnail renders at AND the seed for the live view pose when the
+// template is selected (handleTemplateChange), so the big view always opens matching its
+// thumbnail. Every template has one; only seigaiha's rotation is non-zero. rotationDeg is the
+// INTERNAL engine angle — the slider negates it for the CCW-positive display, and it doubles
+// as the pose-independent overlap-depth recede angle (see coords/canonical for that dual role).
+const poseDefaults = (
+  t: (typeof unitTemplates)[number] | undefined,
+): { scale: number; rotationDeg: number } => ({
+  scale: t?.defaultPose?.scale ?? DEFAULT_SCALE,
+  rotationDeg: t?.defaultPose?.rotationDeg ?? DEFAULT_ROTATION_DEG,
+});
 
 type Size = { width: number; height: number };
 
@@ -160,20 +166,29 @@ export default function Page() {
     );
   }, [userMotif, switchGroup]);
 
-  const [scale, setScale] = useState(INITIAL_SCALE);
-  const [rotationDeg, setRotationDeg] = useState(INITIAL_ROTATION_DEG);
-  const resetView = () => {
-    setScale(INITIAL_SCALE);
-    setRotationDeg(INITIAL_ROTATION_DEG);
-  };
+  // Live, user-adjustable view pose. Seeded from the initially-selected template's defaultPose
+  // (selectedId defaults to unitTemplates[0]); re-seeded on each selection (handleTemplateChange).
+  const [scale, setScale] = useState(() => poseDefaults(unitTemplates[0]).scale);
+  const [rotationDeg, setRotationDeg] = useState(
+    () => poseDefaults(unitTemplates[0]).rotationDeg,
+  );
 
   const selectedTemplate = useMemo(() => {
     const t = unitTemplates.find((x) => x.id === selectedId);
     return t ?? unitTemplates[0];
   }, [selectedId]);
 
+  // Derived (not stored): the selected template's default pose drives "Reset view" and the
+  // Reset button's visibility — both compare the live pose against this template's default.
+  const templateDefaults = poseDefaults(selectedTemplate);
+  const resetView = () => {
+    setScale(templateDefaults.scale);
+    setRotationDeg(templateDefaults.rotationDeg);
+  };
+
   // Gallery swatches: a small fixed-pose render per template. Templates are static,
-  // so compute once. Scale is small so each swatch shows the pattern repeating.
+  // so compute once. The orientation comes from the same poseDefaults the big view seeds
+  // from (so thumbnail and big view always agree); scale is forced small to show repetition.
   const swatchSvgs = useMemo(() => {
     const size = 120;
     const map: Record<string, string> = {};
@@ -182,15 +197,21 @@ export default function Page() {
         template: t,
         viewport: { x: 0, y: 0, width: size, height: size },
         scale: 30,
-        rotationDeg: t.defaultPose?.rotationDeg ?? 0,
+        rotationDeg: poseDefaults(t).rotationDeg,
       });
     }
     return map;
   }, []);
 
-  // Selecting a template no longer resets the view — Scale/Rotation are global and stay under
-  // user control across selections and the Warp stage (use "Reset view" to return to defaults).
-  const handleTemplateChange = (id: string) => setSelectedId(id);
+  // Selecting a gallery template seeds the live view pose from its defaultPose, so the big view
+  // opens at the orientation its thumbnail shows (e.g. seigaiha upright). The user adjusts from
+  // there; the pose only re-seeds on the next selection — mode changes (incl. Warp) keep it.
+  const handleTemplateChange = (id: string) => {
+    setSelectedId(id);
+    const d = poseDefaults(unitTemplates.find((t) => t.id === id));
+    setScale(d.scale);
+    setRotationDeg(d.rotationDeg);
+  };
 
   // 壁紙は「全画面レイヤー」のサイズで計測する
   const [wallRef, wallSize] = useElementSize<HTMLDivElement>();
@@ -634,8 +655,9 @@ export default function Page() {
             />
           </label>
 
-          {/* View is global state (persists across selections + the Warp stage). */}
-          {(scale !== INITIAL_SCALE || rotationDeg !== INITIAL_ROTATION_DEG) && (
+          {/* Show Reset once the user moves the view away from the template's default pose. */}
+          {(scale !== templateDefaults.scale ||
+            rotationDeg !== templateDefaults.rotationDeg) && (
             <button
               type="button"
               onClick={resetView}

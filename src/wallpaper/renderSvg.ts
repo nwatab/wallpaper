@@ -17,6 +17,7 @@ export const renderWallpaperSvg = (args: {
   scale: number;
   rotationDeg: number;
   debugOptions?: DebugOptions;
+  showSymmetryElements?: boolean;
 }): string => {
   const pose: Pose = {
     scale: args.scale,
@@ -29,5 +30,6 @@ export const renderWallpaperSvg = (args: {
     viewport: args.viewport,
     pose,
     debugOptions: args.debugOptions,
+    showSymmetryElements: args.showSymmetryElements,
   });
 };

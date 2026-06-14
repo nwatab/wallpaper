@@ -19,7 +19,7 @@ import { asymmetricUnitUv } from '../regions';
 // Classification runs in XY, where a reflection's linear part is orthogonal and
 // (I − R) is well-conditioned; uv matrices on the hex lattice are integral but NOT
 // orthogonal, so the axis/centre formulas must not run there (cf. the XY overlay in
-// switch/symmetryElements.ts, which this mirrors). Results are carried back to uv by
+// engine/symmetryElements.ts, which this mirrors). Results are carried back to uv by
 // B⁻¹ — affine maps send centres to centres and axes to axes. Pure; memoised.
 // ─────────────────────────────────────────────────────────────────────────────
 

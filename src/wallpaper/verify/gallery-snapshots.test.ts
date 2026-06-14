@@ -11,6 +11,7 @@ import { unitTemplates } from '../unitTemplates';
 // The symmetry/region/maximality suites prove the math; these are only the fill/look check.
 const GALLERY_IDS = [
   'gen-p4m-girih',
+  'gen-p4m-clover',
   'gen-p4-cracked-ice',
   'gen-p6m-shamsa',
   'gen-pmm-leiwen',

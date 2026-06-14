@@ -143,6 +143,37 @@ const girihStar: GalleryMotif = {
   ],
 };
 
+// #1b p4m — Four-leaf clover (quatrefoil). Same region {4,4,2} triangle as girihStar.
+// Just the UPPER half of one +x-pointing leaf, centred on the bottom-edge mirror (y=0):
+// the D4 orbit reflects it across y=0 into a full petal, then the 4-fold rotation repeats
+// it on the ±x / ±y axes — a four-leaf clover at every 4-fold centre. A small iron-red pip
+// sits at the lattice-corner centre and a diamond at the cell centre. p4m is the maximal
+// square group, so any fill is automatically maximal.
+const clover: GalleryMotif = {
+  fills: [
+    {
+      pts: [
+        v(0.06, 0), v(0.11, 0.06), v(0.17, 0.115), v(0.25, 0.15),
+        v(0.34, 0.15), v(0.41, 0.105), v(0.46, 0.04), v(0.48, 0),
+      ],
+      color: INK2,
+    },
+    { pts: [v(0, 0), v(0.05, 0), v(0.04, 0.04)], color: ACCENT },
+    { pts: [v(0.5, 0.5), v(0.5, 0.43), v(0.43, 0.43)], color: ACCENT },
+  ],
+  strokes: [
+    {
+      pts: [
+        v(0.06, 0), v(0.11, 0.06), v(0.17, 0.115), v(0.25, 0.15),
+        v(0.34, 0.15), v(0.41, 0.105), v(0.46, 0.04), v(0.48, 0),
+      ],
+      width: STROKE_W,
+      color: INK,
+    },
+    { pts: [v(0.09, 0), v(0.44, 0)], width: STROKE_W * 0.7, color: INK },
+  ],
+};
+
 // #2 p4 — Chinese cracked-ice pinwheel (chiral). Region triangle (0,0),(1,0),(0.5,0.5).
 // One handed L-bend of lattice bars: its C4 orbit whirls one way → NO mirror.
 const crackedIce: GalleryMotif = {
@@ -538,6 +569,7 @@ const glazedTriangles: GalleryMotif = {
 
 export const galleryMotifDefs: Record<string, GalleryMotif> = {
   'p4m-girih-star': girihStar,
+  'p4m-clover': clover,
   'p4-cracked-ice': crackedIce,
   'p6m-shamsa': shamsa,
   'pmm-leiwen': leiwen,

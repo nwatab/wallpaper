@@ -573,6 +573,76 @@ const glazedTriangles: GalleryMotif = {
   ],
 };
 
+// #17 cmm — William-Morris foliate "Fruit". Region = the cmm asymmetric unit, the XY
+// right triangle (0,0),(1,0),(1,0.5): its bottom leg is the horizontal mirror y=0, its
+// right leg the vertical mirror x=1, and the hypotenuse a 2-fold rotation edge. A seeded
+// fruit sits at the D2 corner (1,0) — the two mirrors there bloom its quarter into a full
+// round fruit at every such corner — while a vine runs to the 2-fold centre (0.5,0.25) on
+// the hypotenuse, so the half-turn carries it on into the next cell (an ogee meander). A
+// serrated leaf and a berry cluster fill the shallow wedge below y=0.5x. Authored upright in
+// XY and unsheared into uv by the rhombic basis (shared with the template, so motif and
+// template can never disagree). cmm is maximal for the rhombic lattice, so any fill is
+// automatically maximal — no chirality/upgrade guard is needed (see maximality.test).
+export const MORRIS_BASIS = { a: { x: 1, y: 0.5 }, b: { x: 1, y: -0.5 } };
+const morrisXy = fromXy(MORRIS_BASIS);
+const M_LEAF = '#6f8a46'; // sage green
+const M_LEAF_DK = '#3f5630'; // deep green (vein / calyx)
+const M_FRUIT = '#cf9a3c'; // gold ochre
+const M_SEED = '#a8382c'; // pomegranate red
+const M_STEM = '#6b4a2a'; // brown vine
+const morrisFruit: GalleryMotif = {
+  fills: [
+    // serrated leaf (drawn first, so the vine + fruit overlay it)
+    {
+      pts: mapPts(morrisXy, [
+        v(0.63, 0.17), v(0.55, 0.205), v(0.45, 0.205), v(0.36, 0.165),
+        v(0.3, 0.1), v(0.26, 0.035), v(0.34, 0.06), v(0.45, 0.085), v(0.55, 0.11),
+      ]),
+      color: M_LEAF,
+    },
+    // fruit body — quarter disk at the D2 corner (1,0)
+    {
+      pts: mapPts(morrisXy, [
+        v(1, 0), v(1, 0.28), v(0.9135, 0.266), v(0.835, 0.2265),
+        v(0.7735, 0.1646), v(0.7337, 0.0865), v(0.72, 0),
+      ]),
+      color: M_FRUIT,
+    },
+    // pomegranate seeds
+    { pts: mapPts(morrisXy, [v(0.86, 0.07), v(0.885, 0.1), v(0.86, 0.13), v(0.835, 0.1)]), color: M_SEED },
+    { pts: mapPts(morrisXy, [v(0.92, 0.14), v(0.945, 0.17), v(0.92, 0.2), v(0.895, 0.17)]), color: M_SEED },
+    { pts: mapPts(morrisXy, [v(0.8, 0.025), v(0.825, 0.05), v(0.8, 0.075), v(0.775, 0.05)]), color: M_SEED },
+    // berry cluster near the origin 2-fold centre
+    { pts: mapPts(morrisXy, [v(0.14, 0.01), v(0.165, 0.035), v(0.14, 0.06), v(0.115, 0.035)]), color: M_SEED },
+    { pts: mapPts(morrisXy, [v(0.21, 0.04), v(0.235, 0.065), v(0.21, 0.09), v(0.185, 0.065)]), color: M_SEED },
+  ],
+  strokes: [
+    // vine: fruit → the hypotenuse 2-fold centre (0.5,0.25); the half-turn carries it on
+    {
+      pts: mapPts(morrisXy, [v(0.77, 0.15), v(0.7, 0.215), v(0.6, 0.24), v(0.5, 0.25)]),
+      width: 0.035,
+      color: M_STEM,
+    },
+    // leaf midrib
+    {
+      pts: mapPts(morrisXy, [v(0.62, 0.16), v(0.45, 0.135), v(0.27, 0.045)]),
+      width: 0.016,
+      color: M_LEAF_DK,
+    },
+    // fruit outline (Morris designs are dark-outlined)
+    {
+      pts: mapPts(morrisXy, [
+        v(1, 0.28), v(0.9135, 0.266), v(0.835, 0.2265), v(0.7735, 0.1646),
+        v(0.7337, 0.0865), v(0.72, 0),
+      ]),
+      width: 0.02,
+      color: M_STEM,
+    },
+    // calyx sepal on the x=1 mirror (reflection completes the V)
+    { pts: mapPts(morrisXy, [v(1, 0.27), v(0.96, 0.33)]), width: 0.018, color: M_LEAF_DK },
+  ],
+};
+
 export const galleryMotifDefs: Record<string, GalleryMotif> = {
   'p4m-girih-star': girihStar,
   'p4m-clover': clover,
@@ -591,6 +661,7 @@ export const galleryMotifDefs: Record<string, GalleryMotif> = {
   'pmg-water-bands': waterBands,
   'pgg-yagasuri': yagasuri,
   'p3m1-glazed-rosette': glazedTriangles,
+  'cmm-morris-fruit': morrisFruit,
 };
 
 export const galleryMotifSvg: Record<string, string> = Object.fromEntries(

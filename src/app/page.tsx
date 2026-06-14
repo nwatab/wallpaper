@@ -195,7 +195,7 @@ export default function Page() {
   // 壁紙は「全画面レイヤー」のサイズで計測する
   const [wallRef, wallSize] = useElementSize<HTMLDivElement>();
 
-  // Region (pink) / Bravais-lattice overlays — shared by the wallpaper and the draw pane.
+  // Region (teal) / Bravais-lattice overlays — shared by the wallpaper and the draw pane.
   const debugOptions = useMemo(
     () => ({
       showRegions: regionDisplay === 'one',

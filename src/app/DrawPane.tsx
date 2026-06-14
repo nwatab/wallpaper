@@ -142,7 +142,7 @@ export type DrawPaneProps = {
   motif: GalleryMotif;
   onMotifChange: (m: GalleryMotif) => void;
   showSymmetryElements: boolean;
-  // Region (pink) / Bravais-lattice overlays — same options as the wallpaper.
+  // Region (teal) / Bravais-lattice overlays — same options as the wallpaper.
   debugOptions?: DebugOptions;
 };
 

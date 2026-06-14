@@ -61,8 +61,11 @@ export function createDebugPaths(args: {
 
   // Fundamental-region overlays. Both stamp the region through the same transform
   // path as the motif, minus the UV→XY basis adapter since regionXy is already in XY.
-  //   showOrbit  → pink: every region (cosetReps × lattice) partitioning the plane.
-  //   showRegions → pink: one representative region per cell (the identity copy).
+  // Teal (#0d9488) — deliberately clear of the fuchsia symmetry-element overlay
+  // (#c026d3) so region boundaries never read as mirror lines, and of the navy
+  // Bravais lattice; also absent from every motif so export-strip can sentinel on it.
+  //   showOrbit  → teal: every region (cosetReps × lattice) partitioning the plane.
+  //   showRegions → teal: one representative region per cell (the identity copy).
   if ((debugOptions.showOrbit || debugOptions.showRegions) && regionXy) {
     const latticeTs = tiles.map(({ i, j }) =>
       translateXy(
@@ -78,7 +81,7 @@ export function createDebugPaths(args: {
           const m = compose(poseMatrix, compose(latticeT, op));
           const regionWorld = regionXy.map((p) => applyToPoint(m, p));
           debugPaths.push(
-            `<path d="${pointsToPathD(regionWorld)}" fill="none" stroke="magenta" stroke-width="1" />`,
+            `<path d="${pointsToPathD(regionWorld)}" fill="none" stroke="#0d9488" stroke-width="1" />`,
           );
         }
       }
@@ -89,7 +92,7 @@ export function createDebugPaths(args: {
         const m = compose(poseMatrix, latticeT);
         const regionWorld = regionXy.map((p) => applyToPoint(m, p));
         debugPaths.push(
-          `<path d="${pointsToPathD(regionWorld)}" fill="none" stroke="magenta" stroke-width="1" />`,
+          `<path d="${pointsToPathD(regionWorld)}" fill="none" stroke="#0d9488" stroke-width="1" />`,
         );
       }
     }

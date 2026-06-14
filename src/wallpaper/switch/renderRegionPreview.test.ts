@@ -36,14 +36,14 @@ describe('renderRegionPreview', () => {
     expect(r.svg).toContain('<clipPath');
   });
 
-  it('draws region (pink) and Bravais-lattice overlays when requested', () => {
+  it('draws region (teal) and Bravais-lattice overlays when requested', () => {
     const r = renderRegionPreview({
       group: 'p4m',
       motif: {},
       canvas,
       debugOptions: { showRegions: true, showOrbit: false, showBravaisLattice: true },
     });
-    expect(r.svg).toContain('magenta'); // fundamental-region overlay (pink)
+    expect(r.svg).toContain('#0d9488'); // fundamental-region overlay (teal)
     expect(r.svg).toContain('navy'); // unit-cell / Bravais lattice
   });
 
@@ -54,7 +54,7 @@ describe('renderRegionPreview', () => {
       canvas,
       debugOptions: { showRegions: false, showOrbit: false, showBravaisLattice: false },
     });
-    expect(r.svg).not.toContain('magenta');
+    expect(r.svg).not.toContain('#0d9488');
     expect(r.svg).not.toContain('navy');
   });
 

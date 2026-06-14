@@ -270,6 +270,7 @@ export default function Page() {
       scale,
       rotationDeg,
       debugOptions,
+      showSymmetryElements,
     });
   }, [
     mode,
@@ -666,9 +667,9 @@ export default function Page() {
 
             {symmetryGuidesExpanded && (
               <div className="px-3 pb-3 border-t border-white/8 flex flex-col gap-2">
-                {/* Symmetry-element overlay — only the group-driven views (switcher / draw)
-                    render it; the gallery uses renderWallpaperSvg, which has no overlay. */}
-                {(mode === 'switch' || mode === 'draw') && (
+                {/* Symmetry-element overlay — composited by every SVG render path (gallery,
+                    switcher, draw). Hidden only in the Warp stage, which is raster. */}
+                {mode !== 'warp' && (
                   <div className="flex flex-col gap-1.5">
                     <div className="text-xs opacity-70">Symmetry elements</div>
                     <label className="flex items-center gap-2 text-xs opacity-90">

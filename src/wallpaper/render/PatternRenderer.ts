@@ -10,6 +10,10 @@ export type RenderInput = {
   viewport: Rect;
   pose: Pose;
   debugOptions?: DebugOptions;
+  // Composite the symmetry-element overlay (mirrors / glides / rotation centres) on top
+  // of the pattern. Independent of `debugOptions` — it is its own opt-in, matching the
+  // group-driven render path (renderGroupSvg).
+  showSymmetryElements?: boolean;
 };
 
 /**

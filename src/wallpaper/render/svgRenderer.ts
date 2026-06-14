@@ -11,7 +11,7 @@ import type { PatternRenderer, RenderInput } from './PatternRenderer';
  */
 export const createSvgRenderer = (): PatternRenderer<string> => ({
   render(input: RenderInput): string {
-    const { template, viewport, pose, debugOptions } = input;
+    const { template, viewport, pose, debugOptions, showSymmetryElements } = input;
 
     const motif = motifs[template.motifId];
     if (!motif) {
@@ -50,6 +50,7 @@ export const createSvgRenderer = (): PatternRenderer<string> => ({
       opsInCellXy,
       poseMatrix,
       tilePositions,
+      showSymmetryElements,
     });
   },
 });

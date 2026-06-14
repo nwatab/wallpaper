@@ -6,7 +6,7 @@ import { extentCenter, viewTransform } from '@/lib/coords/view';
 import type { GalleryMotif } from '../galleryMotifs';
 import { renderMotifLayer, renderOverlayLayer } from '../engine/render';
 import { placeUserMotif, renderableByGroup } from './shapeFamilies';
-import { renderSymmetryElements } from './symmetryElements';
+import { renderSymmetryElements } from '../engine/symmetryElements';
 import { buildCanvasMapping, type CanvasRect, type CanvasMapping } from '../draw/canvasMapping';
 
 // ─────────────────────────────────────────────────────────────────────────────

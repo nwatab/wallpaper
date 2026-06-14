@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { compileUnit } from '../engine/compile';
-import { renderSymmetryElements } from './symmetryElements';
+import { renderSymmetryElements } from '../engine/symmetryElements';
 import { storedBasisOf } from './congruence';
 import { asymmetricUnitUv } from '../regions';
 import { applyToPolygon, basisToMatrix } from '../affine';

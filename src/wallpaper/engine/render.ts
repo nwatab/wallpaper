@@ -12,6 +12,7 @@ import {
 } from '../affine';
 import { toSVG } from '@/lib/coords/surfaces';
 import { extentCenter, viewTransform } from '@/lib/coords/view';
+import { renderSymmetryElements } from './symmetryElements';
 
 const pointsToPathD = (pts: Vec2[]): string => {
   if (pts.length === 0) return '';
@@ -216,6 +217,9 @@ export function renderSvg(
     opsInCellXy?: Affine2D[];
     poseMatrix: Affine2D;
     tilePositions?: { i: number; j: number }[];
+    // Opt-in symmetry-element overlay (mirrors / glides / rotation centres). Its own flag,
+    // not part of debugOptions — same convention as the group-driven path (renderGroupSvg).
+    showSymmetryElements?: boolean;
   },
 ): string {
   const { viewBox } = scene;
@@ -229,6 +233,17 @@ export function renderSvg(
       regionXy: scene.regionXy,
     },
   );
+  // Symmetry overlay shares the view group (world coordinates), composited last like the
+  // debug overlay. Derived from the same opsInCellXy/poseMatrix tile() already produced.
+  const symmetry =
+    debugData?.showSymmetryElements && debugData.opsInCellXy
+      ? renderSymmetryElements({
+          opsInCellXy: debugData.opsInCellXy,
+          basis: scene.basis,
+          poseMatrix: debugData.poseMatrix,
+          viewBox,
+        })
+      : '';
 
   // VIEW STAGE (coords/): recenter the displayed extent's centre onto canonical 0 and
   // emit a centred viewBox. Output-preserving (same pixels as the old top-left box) and
@@ -249,7 +264,7 @@ export function renderSvg(
       ${motif.defs ? `<defs>${motif.defs}</defs>` : ''}
       <g data-layer="view" transform="${toSvgMatrix(view)}">
         <g data-layer="motif">${motif.body}</g>
-        ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}
+        ${overlay ? `<g data-layer="overlay">${overlay}</g>` : ''}${symmetry}
       </g>
     </svg>
   `.trim();

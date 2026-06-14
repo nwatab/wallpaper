@@ -1,7 +1,7 @@
 import { UnitTemplate, Vec2, WallpaperGroup } from './types';
 import { basisToMatrix, applyToPolygon } from './affine';
 import { asymmetricUnitUv } from './regions';
-import { FLEUR_BASIS, TAPA_BASIS } from './galleryMotifs';
+import { FLEUR_BASIS, TAPA_BASIS, MORRIS_BASIS } from './galleryMotifs';
 
 const S3_2 = Math.sqrt(3) / 2; // sin(60°) = √3/2
 
@@ -209,6 +209,9 @@ const gallerySpecs: {
   { id: 'gen-pmg-water-bands', group: 'pmg', label: 'Egyptian water bands', motifId: 'pmg-water-bands', basis: SQUARE },
   { id: 'gen-pgg-yagasuri', group: 'pgg', label: 'Yagasuri arrow feathers', motifId: 'pgg-yagasuri', basis: SQUARE },
   { id: 'gen-p3m1-glazed', group: 'p3m1', label: 'Persian glazed triangles', motifId: 'p3m1-glazed-rosette', basis: HEX120 },
+  // William-Morris foliate "Fruit" on the rhombic lattice (motif authored in XY via
+  // MORRIS_BASIS; see galleryMotifs.ts #17). cmm is maximal for the rhombic lattice.
+  { id: 'gen-cmm-morris', group: 'cmm', label: 'Morris fruit & vine', motifId: 'cmm-morris-fruit', basis: MORRIS_BASIS },
 ];
 
 const galleryTemplates: UnitTemplate[] = gallerySpecs.map((spec) => ({

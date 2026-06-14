@@ -27,6 +27,7 @@ const GALLERY_IDS = [
   'gen-pmg-water-bands',
   'gen-pgg-yagasuri',
   'gen-p3m1-glazed',
+  'gen-cmm-morris',
 ] as const;
 
 const OUT_DIR = join(process.cwd(), '__snapshots__', 'gallery');

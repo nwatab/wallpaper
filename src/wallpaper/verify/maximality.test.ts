@@ -128,6 +128,8 @@ const FILL: Record<string, WallpaperGroup> = {
   'gen-pmg-water-bands': 'pmg',
   'gen-pgg-yagasuri': 'pgg',
   'gen-p3m1-glazed': 'p3m1',
+  // cmm is maximal for the rhombic lattice → no UPGRADE_GENERATORS entry, only a fill check.
+  'gen-cmm-morris': 'cmm',
 };
 
 const MOTIF_OF: Record<string, string> = {
@@ -148,6 +150,7 @@ const MOTIF_OF: Record<string, string> = {
   'gen-pmg-water-bands': 'pmg-water-bands',
   'gen-pgg-yagasuri': 'pgg-yagasuri',
   'gen-p3m1-glazed': 'p3m1-glazed-rosette',
+  'gen-cmm-morris': 'cmm-morris-fruit',
 };
 
 const inkOf = (id: string): { ink: Vec2[]; reps: Affine2D[]; regionFrac: number } => {

@@ -35,14 +35,14 @@ describe('stripOverlays', () => {
       rotationDeg: 0,
       debugOptions: ALL_DEBUG,
     });
-    // sanity: the source actually carries the overlay + magenta (overlay-exclusive colour)
+    // sanity: the source actually carries the overlay + teal (overlay-exclusive colour)
     expect(svg).toContain('<g data-layer="overlay">');
-    expect(svg).toContain('magenta');
+    expect(svg).toContain('#0d9488');
     expect(svg).toContain('#1c3f7a'); // motif ink
 
     const clean = stripOverlays(svg);
     expect(clean).not.toContain('<g data-layer="overlay">');
-    expect(clean).not.toContain('magenta');
+    expect(clean).not.toContain('#0d9488');
     // the motif layer and its ink survive
     expect(clean).toContain('<g data-layer="motif">');
     expect(clean).toContain('#1c3f7a');
@@ -62,7 +62,7 @@ describe('stripOverlays', () => {
     const clean = stripOverlays(svg);
     expect(clean).not.toContain('<g data-layer="symmetry-elements">');
     expect(clean).not.toContain('<g data-layer="overlay">');
-    expect(clean).not.toContain('magenta');
+    expect(clean).not.toContain('#0d9488');
     expect(clean).toContain('<g data-layer="motif">');
   });
 });
@@ -100,7 +100,7 @@ describe('tileable SVG', () => {
     const out = tileableFromTemplate(templateById('gen-p6-whirl'));
     expect(out).not.toContain('data-layer="overlay"');
     expect(out).not.toContain('data-layer="symmetry-elements"');
-    expect(out).not.toContain('magenta');
+    expect(out).not.toContain('#0d9488');
   });
 
   // The core correctness claim: patternTransform IS the basis matrix and the tile is the

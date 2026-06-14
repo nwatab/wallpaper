@@ -112,6 +112,7 @@ const UPGRADE_GENERATORS: Record<
 // actually fills its region.
 const FILL: Record<string, WallpaperGroup> = {
   'gen-p4m-girih': 'p4m',
+  'gen-p4m-clover': 'p4m',
   'gen-p4-cracked-ice': 'p4',
   'gen-p6m-shamsa': 'p6m',
   'gen-pmm-leiwen': 'pmm',
@@ -131,6 +132,7 @@ const FILL: Record<string, WallpaperGroup> = {
 
 const MOTIF_OF: Record<string, string> = {
   'gen-p4m-girih': 'p4m-girih-star',
+  'gen-p4m-clover': 'p4m-clover',
   'gen-p4-cracked-ice': 'p4-cracked-ice',
   'gen-p6m-shamsa': 'p6m-shamsa',
   'gen-pmm-leiwen': 'pmm-leiwen',

@@ -189,6 +189,7 @@ const gallerySpecs: {
   basis: { a: Vec2; b: Vec2 };
 }[] = [
   { id: 'gen-p4m-girih', group: 'p4m', label: 'Girih star & cross', motifId: 'p4m-girih-star', basis: SQUARE },
+  { id: 'gen-p4m-clover', group: 'p4m', label: 'Four-leaf clover', motifId: 'p4m-clover', basis: SQUARE },
   { id: 'gen-p4-cracked-ice', group: 'p4', label: 'Cracked-ice lattice', motifId: 'p4-cracked-ice', basis: SQUARE },
   { id: 'gen-p6m-shamsa', group: 'p6m', label: 'Shamsa rosette', motifId: 'p6m-shamsa', basis: HEX120 },
   { id: 'gen-pmm-leiwen', group: 'pmm', label: 'Cloud-meander key fret', motifId: 'pmm-leiwen', basis: SQUARE },

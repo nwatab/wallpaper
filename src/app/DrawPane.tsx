@@ -16,21 +16,26 @@ import {
 } from '@/wallpaper/draw/foldIntoRegion';
 import { snapTargetsUv, snapToTargets } from '@/wallpaper/draw/snapTargets';
 import { overlapAllowed } from '@/wallpaper/switch/overlapGate';
+import { unplacedUserMotif } from '@/wallpaper/switch/shapeFamilies';
 import { renderRegionPreview } from '@/wallpaper/switch/renderSwitch';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DRAW PANE (M2). A fixed, un-posed view of one fundamental region (true XY geometry)
-// where the user draws in the toggle-set's REFERENCE frame. The committed drawing tiles
-// — with the group's symmetry overlay and the same motifLayer:'clip' policy as the
-// wallpaper (renderRegionPreview) — so each mark is seen reflected/rotated. The live
-// in-progress stroke is previewed cheaply on an overlay (with its immediate orbit under
-// the cell ops) without re-tiling, so drawing stays responsive; the full re-tile happens
-// only on commit (pointer up).
+// of the SELECTED group — so the canvas matches the full-screen wallpaper, and a
+// non-reference toggle member (e.g. pmg) shows its OWN symmetry overlay (pmg's glide),
+// not the toggle-set reference's. The committed drawing tiles — with that group's
+// symmetry overlay and the same motifLayer:'clip' policy as the wallpaper
+// (renderRegionPreview) — so each mark is seen reflected/rotated. The live in-progress
+// stroke is previewed cheaply on an overlay (with its immediate orbit under the cell ops)
+// without re-tiling, so drawing stays responsive; the full re-tile happens only on commit.
 //
-// Captured geometry is stored as a GalleryMotif in reference-frame uv — the same data the
-// engine consumes — so a drawing is just a new SOURCE of the verified pipeline. Gestures
-// commit FOLDED into the asymmetric unit (kaleidoscope capture) unless Overlap mode is
-// on, which stores them as drawn with layer:'overlap' for per-copy painter compositing.
+// Capture happens in the SELECTED group's uv, but the shared drawing is STORED in the
+// toggle-set REFERENCE frame (so a toggle keeps it and re-places it per member): commitDelta
+// unplaces new marks back to the reference frame (unplacedUserMotif). Stored geometry is a
+// GalleryMotif — the same data the engine consumes — so a drawing is just a new SOURCE of
+// the verified pipeline. Gestures commit FOLDED into the asymmetric unit (kaleidoscope
+// capture) unless Overlap mode is on, which stores them as drawn with layer:'overlap' for
+// per-copy painter compositing.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CANVAS = { width: 360, height: 360, padding: 28 };
@@ -126,8 +131,14 @@ const pathD = (pts: Vec2[], closed: boolean): string =>
       (closed ? ' Z' : '');
 
 export type DrawPaneProps = {
-  // The toggle-set reference group (the stable frame the user draws in).
-  referenceGroup: string;
+  // The SELECTED wallpaper group — the canvas previews this group's tiling, symmetry
+  // overlay, snap targets and live reflections, so it matches the full-screen wallpaper
+  // (and a non-reference toggle member, e.g. pmg, shows its own glides/centres rather than
+  // the reference's). The shared `motif` is stored in the toggle-set reference frame; new
+  // marks captured here are unplaced back into it on commit (see commitDelta).
+  group: string;
+  // The stored drawing, in the toggle-set REFERENCE frame. renderRegionPreview places it
+  // into `group`'s own region for display.
   motif: GalleryMotif;
   onMotifChange: (m: GalleryMotif) => void;
   showSymmetryElements: boolean;
@@ -136,7 +147,7 @@ export type DrawPaneProps = {
 };
 
 export default function DrawPane({
-  referenceGroup,
+  group,
   motif,
   onMotifChange,
   showSymmetryElements,
@@ -160,8 +171,8 @@ export default function DrawPane({
   // other group an overlap drawing would visibly break the declared symmetry where
   // copies overlap, so the toggle is gated rather than the promise.
   const overlapOk = useMemo(
-    () => overlapAllowed(referenceGroup as WallpaperGroup),
-    [referenceGroup],
+    () => overlapAllowed(group as WallpaperGroup),
+    [group],
   );
   const overlapActive = overlapMode && overlapOk;
 
@@ -183,20 +194,20 @@ export default function DrawPane({
   const preview = useMemo(
     () =>
       renderRegionPreview({
-        group: referenceGroup,
+        group,
         motif,
         canvas: CANVAS,
         windowUv: zoomWindowUv(zoom),
         showSymmetryElements,
         debugOptions,
       }),
-    [referenceGroup, motif, zoom, showSymmetryElements, debugOptions],
+    [group, motif, zoom, showSymmetryElements, debugOptions],
   );
 
-  // Cell ops (reference uv) for the live draft reflections.
+  // Cell ops (selected-group uv) for the live draft reflections.
   const cellOps = useMemo(
-    () => getGroup(referenceGroup as WallpaperGroup).cosetReps,
-    [referenceGroup],
+    () => getGroup(group as WallpaperGroup).cosetReps,
+    [group],
   );
 
   const toUv = preview.toUv;
@@ -229,18 +240,18 @@ export default function DrawPane({
   const snapTargets = useMemo(
     () =>
       snapTargetsUv({
-        group: referenceGroup as WallpaperGroup,
+        group: group as WallpaperGroup,
         basis: preview.basis,
         window: uvWindow,
       }),
-    [referenceGroup, preview.basis, uvWindow],
+    [group, preview.basis, uvWindow],
   );
 
   // Candidate lattice window for the fold — wide enough for whatever the current
   // canvas window can reach (zoomed-out windows need more than the ±2 baseline).
   const latticeWindow = useMemo(
-    () => foldLatticeWindow(referenceGroup as WallpaperGroup, uvWindow),
-    [referenceGroup, uvWindow],
+    () => foldLatticeWindow(group as WallpaperGroup, uvWindow),
+    [group, uvWindow],
   );
 
   // Pen sampling density is px-based (MIN_STEP_PX on the canvas), so zooming out
@@ -278,6 +289,19 @@ export default function DrawPane({
     onMotifChange(next);
   };
 
+  // Merge newly-captured marks into the stored drawing. The marks are in the SELECTED
+  // group's frame (that's what the canvas previews); the drawing is stored in the
+  // toggle-set REFERENCE frame so a toggle keeps it, so unplace them first. Identity for
+  // the reference member / singletons (placement is the identity there).
+  const commitDelta = (delta: GalleryMotif) => {
+    const ref = unplacedUserMotif(group as WallpaperGroup, delta);
+    commit({
+      ...motif,
+      fills: [...(motif.fills ?? []), ...(ref.fills ?? [])],
+      strokes: [...(motif.strokes ?? []), ...(ref.strokes ?? [])],
+    });
+  };
+
   // Fold the gesture into the asymmetric unit (kaleidoscope capture): the stored motif
   // must live inside the unit (the renderer clips each orbit copy to its region), and
   // folding — rather than clipping — keeps ink drawn anywhere on the canvas visible
@@ -286,35 +310,33 @@ export default function DrawPane({
   const commitShape = (pts: Vec2[]) => {
     if (pts.length < 2) return;
     const closed = tool === 'rect' || tool === 'ellipse' || tool === 'circle';
-    const group = referenceGroup as WallpaperGroup;
+    const g = group as WallpaperGroup;
     if (overlapActive) {
-      // Stored raw (reference uv, not folded): the renderer depth-sorts its copies.
+      // Stored raw (selected-group uv, not folded): the renderer depth-sorts its copies.
       if (closed && fillMode) {
         if (pts.length < 3) return;
-        const fill: Fill = { pts, color, layer: 'overlap' };
-        commit({ ...motif, fills: [...(motif.fills ?? []), fill] });
+        commitDelta({ fills: [{ pts, color, layer: 'overlap' }] });
       } else {
-        const stroke: Stroke = { pts, width, color, closed, layer: 'overlap' };
-        commit({ ...motif, strokes: [...(motif.strokes ?? []), stroke] });
+        commitDelta({ strokes: [{ pts, width, color, closed, layer: 'overlap' }] });
       }
       return;
     }
     if (closed && fillMode) {
-      const fills: Fill[] = foldFillUv(pts, group, latticeWindow).map((pp) => ({
+      const fills: Fill[] = foldFillUv(pts, g, latticeWindow).map((pp) => ({
         pts: pp,
         color,
       }));
       if (fills.length === 0) return;
-      commit({ ...motif, fills: [...(motif.fills ?? []), ...fills] });
+      commitDelta({ fills });
     } else {
-      const strokes: Stroke[] = foldShapeUv(pts, closed, group, latticeWindow).map((s) => ({
+      const strokes: Stroke[] = foldShapeUv(pts, closed, g, latticeWindow).map((s) => ({
         pts: s.pts,
         width,
         color,
         closed: s.closed,
       }));
       if (strokes.length === 0) return;
-      commit({ ...motif, strokes: [...(motif.strokes ?? []), ...strokes] });
+      commitDelta({ strokes });
     }
   };
 

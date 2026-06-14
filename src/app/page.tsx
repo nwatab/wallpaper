@@ -132,7 +132,7 @@ export default function Page() {
   const [regionDisplay, setRegionDisplay] = useState<'none' | 'one' | 'all'>(
     'none',
   );
-  const [bravaisDisplay, setBravaisDisplay] = useState<'none' | 'all'>('none');
+  const [showBravaisLattice, setShowBravaisLattice] = useState(false);
   const [symmetryGuidesExpanded, setSymmetryGuidesExpanded] = useState(false);
   // Mobile: the side panel collapses into a thin full-height rail at the left edge (no
   // hamburger). Tapping the rail pops the panel out; tapping the scrim outside tucks it
@@ -210,9 +210,9 @@ export default function Page() {
     () => ({
       showRegions: regionDisplay === 'one',
       showOrbit: regionDisplay === 'all',
-      showBravaisLattice: bravaisDisplay === 'all',
+      showBravaisLattice,
     }),
-    [regionDisplay, bravaisDisplay],
+    [regionDisplay, showBravaisLattice],
   );
 
   // Warp texture source: the seamless cell + basis of WHATEVER the active selection mode has
@@ -745,28 +745,15 @@ export default function Page() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <div className="text-xs opacity-70">
-                    Bravais lattice (cell boundaries)
-                  </div>
-                  {(
-                    [
-                      { value: 'none', label: 'None' },
-                      { value: 'all', label: 'All bravais lattices' },
-                    ] as const
-                  ).map(({ value, label }) => (
-                    <label
-                      key={value}
-                      className="flex items-center gap-2 text-xs opacity-90"
-                    >
-                      <input
-                        type="radio"
-                        name="bravaisDisplay"
-                        checked={bravaisDisplay === value}
-                        onChange={() => setBravaisDisplay(value)}
-                      />
-                      {label}
-                    </label>
-                  ))}
+                  <div className="text-xs opacity-70">Bravais lattice</div>
+                  <label className="flex items-center gap-2 text-xs opacity-90">
+                    <input
+                      type="checkbox"
+                      checked={showBravaisLattice}
+                      onChange={(e) => setShowBravaisLattice(e.target.checked)}
+                    />
+                    Show cell boundaries
+                  </label>
                 </div>
               </div>
             )}

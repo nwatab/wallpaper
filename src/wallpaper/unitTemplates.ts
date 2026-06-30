@@ -38,7 +38,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'p2-hex-equilateral-triangle',
     group: 'p2',
-    label: 'Equilateral triangle on hex lattice',
+    label: 'Hex-lattice triangle',
     basis: { a: { x: 1, y: 0 }, b: { x: 0.5, y: S3_2 } },
     // triangle: origin, a, b
     regionXy: [vec2(0, 0), vec2(1, 0), vec2(0.5, S3_2)],
@@ -50,7 +50,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'pm-rectangular-vertical-mirrors',
     group: 'pm',
-    label: 'Rectangular with vertical mirrors',
+    label: 'Vertical mirrors',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     regionXy: [vec2(0, 0), vec2(0.5, 0), vec2(0.5, 1), vec2(0, 1)],
     motifId: 'motif-pm-leaf',
@@ -61,7 +61,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'pg-rectangular-horizontal-glides',
     group: 'pg',
-    label: 'Rectangular with horizontal glide reflections',
+    label: 'Horizontal glides',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     regionXy: [vec2(0, 0), vec2(1, 0), vec2(1, 0.5), vec2(0, 0.5)],
     motifId: 'motif-pg-arrow',
@@ -73,7 +73,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'cm-seigaiha-equilateral-triangle',
     group: 'cm',
-    label: 'Seigaiha -- equilateral triangle fundamental region',
+    label: 'Seigaiha',
     basis: {
       a: { x: 1, y: 0 },
       b: { x: -0.5, y: S3_2 },
@@ -90,7 +90,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'pmm-rectangular',
     group: 'pmm',
-    label: 'Rectangular -- two perpendicular mirrors',
+    label: 'Perpendicular mirrors',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     // quarter cell: top-left quadrant in SVG coords
     regionXy: [vec2(0, 0), vec2(0.5, 0), vec2(0.5, 0.5), vec2(0, 0.5)],
@@ -103,7 +103,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'pmg-rectangular-vertical-mirrors',
     group: 'pmg',
-    label: 'Rectangular -- vertical mirrors, horizontal glides',
+    label: 'Mirrors & glides',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     // quarter cell: upper-left quadrant [0,0.5]x[0,0.5]
     regionXy: [vec2(0, 0), vec2(0.5, 0), vec2(0.5, 0.5), vec2(0, 0.5)],
@@ -116,8 +116,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'pgg-rectangular',
     group: 'pgg',
-    label:
-      'Rectangular -- glide reflections in both directions, no mirrors',
+    label: 'Glides only, no mirrors',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     // right-angled isosceles triangle: right angle at (1/2,1) in SVG (= y_up apex (1/2,0))
     regionXy: [vec2(0.5, 1), vec2(1, 0.5), vec2(0, 0.5)],
@@ -130,7 +129,7 @@ const designTemplates: UnitTemplate[] = [
   {
     id: 'cm-houndstooth',
     group: 'cm',
-    label: 'Houndstooth -- right isosceles triangle fundamental region',
+    label: 'Houndstooth',
     basis: { a: { x: 1, y: 0 }, b: { x: 0, y: 1 } },
     regionXy: [vec2(0, 0), vec2(0, 1), vec2(1, 1)],
     motifId: 'motif-cm-houndstooth',

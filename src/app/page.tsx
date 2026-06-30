@@ -576,10 +576,10 @@ export default function Page() {
                           )}
                         </button>
                         <span
-                          className={`text-[9px] leading-tight text-center break-words transition-opacity ${
+                          className={`text-[11px] leading-tight text-center break-words transition-colors ${
                             active
-                              ? 'font-semibold opacity-100'
-                              : 'opacity-60'
+                              ? 'font-semibold text-white'
+                              : 'text-white/85'
                           }`}
                         >
                           {t.label}
